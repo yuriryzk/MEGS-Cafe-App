@@ -23,7 +23,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  max-height: calc(100% - 59px);
+  max-height: calc(100% - var(--status-h));
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -107,7 +107,7 @@
 }
 .dialog__order-pill {
   align-self: flex-start;
-  padding: 6px 10px;
+  padding: 8px 12px;
   border-radius: var(--radius-badge);
   background: var(--ink);
   color: var(--gold);
@@ -170,3 +170,15 @@
 }
 .promo-row .field { flex: 1 0 0; min-width: 0; }
 .promo-row > .btn { margin-top: 28px; }
+
+/* A reward choice: the radio, then what it would make free in this cart, under its label */
+.reward-choice + .reward-choice { border-top: 1px solid var(--rule); }
+.reward-choice__note { margin: -8px 0 12px 34px; }
+
+/* An offer the cart qualifies for, listed with the automatic discounts */
+.offer-applied {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 12px;
+}
+.offer-applied .t-body-sm { grid-column: 1 / -1; }

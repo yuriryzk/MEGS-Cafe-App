@@ -19,15 +19,17 @@ import {
   SearchButton,
   SectionHeader,
   Stepper,
-  Tabs,
   TextArea,
 } from '../components/blocks'
 import { Content, Row, Screen, TopBar, TopBarAction } from '../components/Screen'
 import { Badge, ProductThumb } from '../components/blocks'
 import { Icon } from '../components/Icon'
-import { Button, Checkbox, Loader, Photo } from '../components/ui'
+import { Button, Checkbox, Photo } from '../components/ui'
 import { FulfillmentSummary } from '../components/order'
 import interiorPhoto from '../assets/photos/interior-banquette.webp'
+import lattesPhoto from '../assets/photos/iced-lattes-banquette.webp'
+import cupsPhoto from '../assets/photos/ube-choco-matcha-cups.webp'
+import wingsPhoto from '../assets/photos/wings-and-drinks.webp'
 import {
   boards,
   collections,
@@ -43,6 +45,7 @@ import {
   type Section,
 } from '../data/menu'
 import { useOverlay } from '../overlays/OverlayHost'
+import { featuredPromotion, nextReward } from '../data/rewards'
 import { useApp } from '../state/AppState'
 import './shop.css'
 
@@ -65,6 +68,13 @@ const menuGroups = [...new Set(boards.map((b) => b.group))].map((group) => ({
   group,
   boards: boards.filter((b) => b.group === group),
 }))
+
+/** Home's group tiles: a crop of the cafe's own photos showing what each group holds */
+const groupPhotos: Record<string, { photo: string; position: string }> = {
+  Coffee: { photo: lattesPhoto, position: '50% 70%' },
+  'Non-Coffee': { photo: cupsPhoto, position: '40% 50%' },
+  Food: { photo: wingsPhoto, position: '30% 75%' },
+}
 
 let homeHasLoaded = false
 let promoShown = false
@@ -93,7 +103,7 @@ export function Home() {
 
   // O-01 Promo modal greets a newly signed-up member once.
   useEffect(() => {
-    if (loading || !firstLaunch || session !== 'member' || promoShown) return
+    if (loading || !firstLaunch || session !== 'member' || promoShown || !featuredPromotion) return
     promoShown = true
     overlay.open('promo')
   }, [loading, firstLaunch, session, overlay])
@@ -114,7 +124,9 @@ export function Home() {
             ? Array.from({ length: limit }, (_, i) => <ProductRowSkeleton key={i} />)
             : productsIn(section)
                 .slice(0, limit)
-                .map((p) => <ProductRow key={p.id} product={p} onOpen={() => open(p.id)} />)}
+                .map((p) => (
+                  <ProductRow key={p.id} product={p} onOpen={() => open(p.id)} hideBadge={sectionById(section)!.badge} />
+                ))}
         </MenuBoard>
       </Row>
     </>
@@ -155,6 +167,7 @@ export function Home() {
                 label={g.group}
                 count={g.boards.reduce((n, b) => n + productsIn(b.id).length, 0)}
                 onClick={() => navigate(`/menu?section=${g.boards[0].id}`)}
+                {...groupPhotos[g.group]}
               />
             ))}
           </nav>
@@ -168,12 +181,8 @@ export function Home() {
           ) : (
             <RewardsStrip
               points={`${points.toLocaleString('en-PH')} pts`}
-              hint={
-                points < 1400
-                  ? `${(1400 - points).toLocaleString('en-PH')} pts to a free drink`
-                  : 'Free drink unlocked'
-              }
-              progress={points / 1400}
+              hint={nextReward(points).text}
+              progress={nextReward(points).progress}
               onClick={() => navigate('/rewards')}
             />
           )}
@@ -181,12 +190,12 @@ export function Home() {
 
         {board('best-sellers', 4)}
 
-        {!loading && !promoDismissed && (
+        {!loading && !promoDismissed && featuredPromotion && (
           <Row>
             <PromoBanner
-              title="Free pastry with any large drink"
-              subtitle="Ends 31 Oct"
-              onClick={() => navigate('/promotions/free-pastry')}
+              title={featuredPromotion.title}
+              subtitle={featuredPromotion.validity}
+              onClick={() => navigate(`/promotions/${featuredPromotion!.id}`)}
               onDismiss={() => setPromoDismissed(true)}
             />
           </Row>
@@ -245,29 +254,6 @@ const railSections = [
 const railLabel = (title: string) => title.replace(/ · (Coffee|Non-Coffee)$/, '')
 // Remembered for the session, so coming back from a product returns to the same place in the list
 let lastScroll = 0
-
-/** One item in the list: photo, name, what is in it, price; + opens the product to choose options. */
-function MenuItem({ id, onOpen }: { id: string; onOpen: () => void }) {
-  const p = productById(id)!
-  return (
-    <div className="mitem">
-      <button className="mitem__open" onClick={onOpen}>
-        <ProductThumb product={p} />
-        <span className="mitem__text">
-          <span className="t-h3 mitem__name">{p.name}</span>
-          <span className="t-body-sm muted mitem__blurb">{p.blurb}</span>
-          <span className="mitem__price num">
-            <span className="t-price">{peso(p.price)}</span>
-            {p.priceMax > p.price && <span className="t-caption muted"> – {peso(p.priceMax)}</span>}
-          </span>
-        </span>
-      </button>
-      <button className="mitem__add" aria-label={`Choose options for ${p.name}`} onClick={onOpen}>
-        <Icon name="plus" size={18} />
-      </button>
-    </div>
-  )
-}
 
 /** C-10 Menu — a category rail on the left and one list on the right that scrolls through every
  *  section; the rail follows the list and jumps it to a section. */
@@ -374,7 +360,7 @@ export function Menu() {
                 {s.title}
               </h2>
               {productsIn(s.id).map((p) => (
-                <MenuItem key={p.id} id={p.id} onOpen={() => open(p.id)} />
+                <ProductRow key={p.id} product={p} onOpen={() => open(p.id)} hideBadge={s.badge} />
               ))}
             </section>
           ))}
@@ -404,7 +390,7 @@ export function SectionList() {
           <Row>
             <div className="chip-row">
               {(['All', 'Hot', 'Iced'] as const).map((f) => (
-                <Chip key={f} label={f} selected={filter === f} onClick={() => setFilter(f)} />
+                <Chip key={f} label={f === 'Iced' ? 'Cold' : f} selected={filter === f} onClick={() => setFilter(f)} />
               ))}
             </div>
           </Row>
@@ -436,9 +422,11 @@ export function Search() {
   const [q, setQ] = useState('')
   const query = q.trim().toLowerCase()
 
+  // SRS FR-MNU-06: results from 2 characters; before that, recent searches and popular items
+  const searching = query.length >= 2
   const results = useMemo(
     () =>
-      query
+      searching
         ? products.filter(
             (p) =>
               p.name.toLowerCase().includes(query) ||
@@ -446,7 +434,7 @@ export function Search() {
               sectionById(p.section)?.title.toLowerCase().includes(query),
           )
         : [],
-    [query],
+    [query, searching],
   )
 
   const remember = () => {
@@ -477,8 +465,8 @@ export function Search() {
       }
     >
       <Content>
-        <h1 className="sr-only">Search the menu</h1>
-        {!query ? (
+        <h1 className="sr-only t-h1">Search the menu</h1>
+        {!searching ? (
           <>
             {recentSearches.length > 0 && (
               <>
@@ -632,8 +620,14 @@ export function ProductDetail() {
       footer={
         <div className="pdp__footer">
           <Stepper value={qty} onChange={setQty} />
-          <Button onClick={add} disabled={adding} aria-busy={adding} className="pdp__add btn--split" height={52}>
-            <span>{adding ? 'Added' : editing ? 'Update item' : 'Add to order'}</span>
+          <Button
+            onClick={add}
+            disabled={adding || !product.available}
+            aria-busy={adding}
+            className="pdp__add btn--split"
+            height={52}
+          >
+            <span>{!product.available ? 'Sold out' : adding ? 'Added' : editing ? 'Update item' : 'Add to order'}</span>
             <span className="num">{peso(unit * qty)}</span>
           </Button>
         </div>

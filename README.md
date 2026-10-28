@@ -16,10 +16,31 @@ npm run dev
 Then open the address Vite prints. On a desktop the app shows inside a phone frame, with a list of
 every screen on the left.
 
-Two demo switches, for showing the prototype only:
+## Demo it on a phone
+
+On a phone the app fills the screen like a native app: no frame, and the phone's own status bar.
+It remembers the cart, orders, points and sign-in between visits; **Profile → Settings → Reset demo
+data** starts it over.
+
+- **Same Wi-Fi, quickest:** run `npm run dev`, then open the "Network" address Vite prints
+  (for example `http://192.168.1.20:5173`) on the phone.
+- **Installed to the home screen, works offline:** build it and put the `dist/` folder on any
+  https host (Netlify, Vercel, Cloudflare Pages or GitHub Pages all have free plans):
+
+  ```bash
+  npm run build
+  ```
+
+  Open the https address on the phone, then **Share → Add to Home Screen** (iPhone, Safari) or
+  **⋮ → Install app** (Android, Chrome). It opens full screen with the MEGS' icon. Installing and
+  offline use need https; over plain Wi-Fi (`http://`) the app runs but cannot be installed.
+
+Two demo switches, for showing the prototype only (these visits start fresh and ignore saved data):
 
 - `?demo=member` starts signed in
 - `?demo=cart` starts signed in with three items in the cart
+
+App icons are made from the logo with `node scripts/app-icons.mjs`.
 
 ## The menu
 

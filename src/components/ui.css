@@ -13,7 +13,7 @@
 .btn:active:not(:disabled) { transform: translateY(1px); }
 .btn--full { width: 100%; }
 /* Label on the left, the total on the right (Add to order · Checkout · Place order) */
-.btn--split { padding: 0 18px; }
+.btn--split { padding: 0 16px; }
 .btn--split > .t-button { flex: 1; display: flex; justify-content: space-between; }
 .btn--primary {
   background: var(--ink);
@@ -49,7 +49,8 @@
   cursor: not-allowed;
   background: var(--active);
   border-color: transparent;
-  color: var(--faint);
+  /* muted, not faint: a disabled label still reads at 4.5:1 on the grey fill */
+  color: var(--muted);
 }
 .btn--text:disabled { background: none; }
 .btn:focus-visible,
@@ -63,7 +64,7 @@
 .field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   width: 100%;
 }
 .field > label { font-weight: 500; }
@@ -72,7 +73,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-8);
-  padding: 0 14px;
+  padding: 0 16px;
   background: var(--surface);
   border: 1px solid var(--control);
   border-radius: var(--radius-input);
@@ -135,10 +136,11 @@
   gap: var(--space-8);
 }
 .otp__digit {
-  width: 46px;
+  flex: 1 0 0;
+  min-width: 0;
   height: 56px;
   text-align: center;
-  font-size: 22px;
+  font-size: 24px;
   line-height: 28px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -150,7 +152,7 @@
 /* Pagination — a run of short steel bars; the current one is lit */
 .dots {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   align-items: center;
 }
 .dots span {
@@ -217,4 +219,14 @@
 @media (prefers-reduced-motion: reduce) {
   .loader { animation-duration: 2.4s; }
   .btn { transition: none; }
+}
+
+/* Show/Hide inside a password field: a 48px text button at the field's right edge */
+.field__reveal {
+  flex-shrink: 0;
+  min-width: 48px;
+  height: 48px;
+  padding: 0 4px;
+  font-weight: 600;
+  color: var(--ink);
 }

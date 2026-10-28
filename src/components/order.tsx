@@ -348,14 +348,18 @@ export function PriceRow({ label, amount, total }: { label: string; amount: stri
 }
 
 /** Row / Discount (Tier, Applied) */
-export function DiscountRow({ label = 'Regular discount', amount }: { label?: string; amount: number }) {
+/** A discount line: label, "Saved", the amount with a minus sign, and an optional note under it */
+export function DiscountRow({ label = 'Regular discount', note, amount }: { label?: string; note?: string; amount: number }) {
   return (
     <div className="price-row discount-row">
-      <span className="discount-row__left">
-        <span className="t-body">{label}</span>
-        <span className="discount-row__tag t-caption">Saved</span>
+      <span className="discount-row__body">
+        <span className="discount-row__left">
+          <span className="t-body">{label}</span>
+          <span className="discount-row__tag t-caption">Saved</span>
+        </span>
+        {note && <span className="t-body-sm muted">{note}</span>}
       </span>
-      <span className="t-price">−{peso(amount)}</span>
+      <span className="t-price num">−{peso(amount)}</span>
     </div>
   )
 }
@@ -363,19 +367,31 @@ export function DiscountRow({ label = 'Regular discount', amount }: { label?: st
 /** Price breakdown block used by Cart, Checkout and Order Detail — a printed receipt. */
 export function PriceBreakdown({
   subtotal,
+  reward,
+  offer,
   discount,
   deliveryFee,
 }: {
   subtotal: number
+  reward?: { name: string; amount: number; items: { name: string; amount: number }[] } | null
+  offer?: { name: string; amount: number; note: string } | null
   discount: number
   deliveryFee: number
 }) {
+  const rewardOff = reward?.amount ?? 0
+  const offerOff = offer?.amount ?? 0
+  // SRS FR-CHK-04: Subtotal, tier discount, promotion, reward, delivery fee, Total;
+  // every discount carries a minus sign, a label and the word "Saved"
   return (
     <div className="price-breakdown">
       <PriceRow label="Subtotal" amount={peso(subtotal)} />
       {discount > 0 && <DiscountRow amount={discount} />}
+      {offer && <DiscountRow label={offer.name} note={offer.note} amount={offerOff} />}
+      {reward && (
+        <DiscountRow label={reward.name} note={`${reward.items.map((i) => i.name).join(' and ')} free`} amount={rewardOff} />
+      )}
       {deliveryFee > 0 && <PriceRow label="Delivery fee" amount={peso(deliveryFee)} />}
-      <PriceRow total label="Total" amount={peso(subtotal - discount + deliveryFee)} />
+      <PriceRow total label="Total" amount={peso(Math.max(0, subtotal - discount - offerOff - rewardOff) + deliveryFee)} />
     </div>
   )
 }

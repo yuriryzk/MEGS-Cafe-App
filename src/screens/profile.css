@@ -146,7 +146,7 @@
   width: 10px;
   height: 10px;
   border-radius: 5px;
-  margin-top: 6px;
+  margin-top: 8px;
   flex-shrink: 0;
 }
 .note__dot.is-unread { background: var(--gold); box-shadow: 0 0 0 2px var(--surface), 0 0 0 3px var(--gold-ink); }

@@ -27,7 +27,8 @@ const rowIcons: Record<string, IconName> = {
   'Pay at counter': 'store',
 }
 import { useOverlay } from '../overlays/OverlayHost'
-import { useApp } from '../state/AppState'
+import { featuredPromotion } from '../data/rewards'
+import { resetDemo, useApp } from '../state/AppState'
 import './profile.css'
 
 /** Row / Settings — icon, label, optional value, chevron. Renders as a button only when it does something. */
@@ -293,6 +294,15 @@ export function Settings() {
           <SettingsRow label="Language" value="English" />
           <SettingsRow label="Privacy" />
         </Group>
+        <Group title="Demo">
+          <SettingsRow
+            label="Reset demo data"
+            value="Clears this phone"
+            onClick={() => {
+              if (window.confirm('Reset the demo? Your cart, orders and sign-in on this phone will be cleared.')) resetDemo()
+            }}
+          />
+        </Group>
         <Group>
           <SettingsRow label="Delete account" danger />
           <SettingsRow label="Log out" danger onClick={() => overlay.open('logout')} />
@@ -316,10 +326,10 @@ const initialNotes: Note[] = [
   },
   {
     id: 'n3',
-    title: 'Free pastry with any large drink',
+    title: featuredPromotion?.title ?? 'New offers this week',
     body: 'Ends 31 Oct. Tap to see the offer.',
     time: 'Yesterday',
-    to: '/promotions/free-pastry',
+    to: featuredPromotion ? `/promotions/${featuredPromotion.id}` : '/promotions',
     day: 'Earlier',
   },
   { id: 'n4', title: 'Order #1038 completed', body: 'Rate your order or order it again.', time: '12 Oct', to: '/orders/1038', day: 'Earlier' },

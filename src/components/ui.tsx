@@ -1,4 +1,4 @@
-import { useRef, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode } from 'react'
+import { useRef, useState, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode } from 'react'
 import logoArt from '../assets/brand/megs-logo.webp'
 import markArt from '../assets/brand/megs-mark.webp'
 import spinner from '../assets/figma/spinner.svg'
@@ -10,7 +10,7 @@ type ButtonVariant = 'primary' | 'secondary' | 'text' | 'text-small' | 'danger' 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonVariant
   /** Height in px: 56 (default), 48, 40. */
-  height?: 56 | 48 | 40
+  height?: 56 | 52 | 48 | 40
   full?: boolean
   icon?: ReactNode
 }
@@ -69,6 +69,28 @@ export function TextField({ label, helper, error, trailing, id, ...rest }: TextF
   )
 }
 
+/** Password field with a Show/Hide control (SRS FR-ACC-06) */
+export function PasswordField(props: Omit<TextFieldProps, 'type' | 'trailing'>) {
+  const [shown, setShown] = useState(false)
+  return (
+    <TextField
+      {...props}
+      type={shown ? 'text' : 'password'}
+      trailing={
+        <button
+          type="button"
+          className="field__reveal t-body-sm"
+          aria-pressed={shown}
+          aria-label={shown ? 'Hide password' : 'Show password'}
+          onClick={() => setShown((v) => !v)}
+        >
+          {shown ? 'Hide' : 'Show'}
+        </button>
+      }
+    />
+  )
+}
+
 /** Checkbox */
 export function Checkbox({
   label,
@@ -119,6 +141,14 @@ export function OtpInput({ value, onChange }: { value: string; onChange: (v: str
           }}
           onKeyDown={(e) => {
             if (e.key === 'Backspace' && !d && i > 0) refs.current[i - 1]?.focus()
+          }}
+          // SRS FR-ACC-04: a pasted code fills all six boxes
+          onPaste={(e) => {
+            const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
+            if (!pasted) return
+            e.preventDefault()
+            onChange(pasted)
+            refs.current[Math.min(pasted.length, 5)]?.focus()
           }}
         />
       ))}

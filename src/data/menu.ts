@@ -197,7 +197,7 @@ export function optionGroupsFor(p: Product): OptionGroup[] {
           : choiceRows
               .filter((c) => c.group === g.id && yes(c.is_available))
               .map((c) => ({ label: c.label, delta: num(c.price_add) ?? 0, badge: c.badge || undefined, isDefault: yes(c.is_default) }))
-      return { id: g.id, title: g.title, required: yes(g.required), pick: g.pick === 'many' ? 'many' : 'one', choices }
+      return { id: g.id, title: g.title, required: yes(g.required), pick: (g.pick === 'many' ? 'many' : 'one') as OptionGroup['pick'], choices }
     })
     .filter((g) => g.choices.length > 0)
 }
@@ -223,4 +223,17 @@ export function defaultOrder(productId: string) {
   }
 }
 
-export const peso = (n: number) => `₱${n.toLocaleString('en-PH')}`
+// SRS 2.4: Philippine peso, tax-inclusive, 2 decimal places
+export const peso = (n: number) =>
+  `₱${n.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+
+/** Today's price for an item with these options (reorders use current prices, SRS FR-ROR-03) */
+export function priceFor(productId: string, options: string[]) {
+  const p = productById(productId)
+  if (!p) return undefined
+  const extra = optionGroupsFor(p)
+    .flatMap((g) => g.choices)
+    .filter((c) => options.includes(c.label))
+    .reduce((s, c) => s + c.delta, 0)
+  return p.price + extra
+}

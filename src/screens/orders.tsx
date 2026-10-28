@@ -17,7 +17,7 @@ import {
 import { Content, Row, Screen, TopBar } from '../components/Screen'
 import { Button } from '../components/ui'
 import { Icon } from '../components/Icon'
-import { peso, unavailableToday } from '../data/menu'
+import { peso, priceFor, unavailableToday } from '../data/menu'
 import { pastOrderByNumber, pastOrders, type PastOrder } from '../data/orders'
 import { useOverlay } from '../overlays/OverlayHost'
 import { sampleLines, tierDiscount, useApp, type CartLine, type Fulfillment, type PlacedOrder } from '../state/AppState'
@@ -92,7 +92,7 @@ export function OrderTracking() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const overlay = useOverlay()
-  const { trackStage, setTrackStage, orderCancelled, setOrderCancelled, setActiveOrder, notificationsOn, lastOrder } =
+  const { trackStage, setTrackStage, orderCancelled, setOrderCancelled, setActiveOrder, notificationsOn, lastOrder, restoreReward } =
     useApp()
   const order = useTrackedOrder()
   const f = order.fulfillment
@@ -138,12 +138,15 @@ export function OrderTracking() {
     return () => clearTimeout(t)
   }, [notificationsOn, forced, overlay, lastOrder])
 
+  // SRS FR-TRK-04 / AS-09: cancellable while Received or Accepted; from Preparing on, it's too late
   const cancel = async () => {
-    if (stage >= 1) return overlay.open('too-late')
+    if (stage >= 2) return overlay.open('too-late')
     const ok = await overlay.confirm('cancel-order')
     if (ok) {
       userCancelled.current = true
       setOrderCancelled(true)
+      // FR-TRK-05: a reward voucher used on the order goes back to My rewards
+      if (lastOrder?.rewardId) restoreReward(lastOrder.rewardId)
     }
   }
 
@@ -233,15 +236,17 @@ function useReorder() {
   const overlay = useOverlay()
   const { addToCart } = useApp()
   return async (lines: CartLine[]) => {
-    const missing = lines.filter((l) => unavailableToday.includes(l.productId))
+    const gone = (l: CartLine) => unavailableToday.includes(l.productId) || priceFor(l.productId, l.options) === undefined
+    const missing = lines.filter(gone)
     if (missing.length) {
       const ok = await overlay.confirm('unavailable', { items: missing.map(lineName) })
-      if (!ok) return
+      // SRS FR-ROR-04: if every item is unavailable, the cart is left unchanged
+      if (!ok || missing.length === lines.length) return
     }
     lines
-      .filter((l) => !unavailableToday.includes(l.productId))
+      .filter((l) => !gone(l))
       .forEach((l) =>
-        addToCart({ productId: l.productId, options: l.options, note: l.note, unitPrice: l.unitPrice, qty: l.qty }),
+        addToCart({ productId: l.productId, options: l.options, note: l.note, unitPrice: priceFor(l.productId, l.options)!, qty: l.qty }),
       )
     navigate('/cart')
   }

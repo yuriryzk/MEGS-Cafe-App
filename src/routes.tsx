@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import type { useApp } from './state/AppState'
+import { featuredPromotion } from './data/rewards'
 import {
   ForgotPassword,
   LogIn,
@@ -265,7 +266,7 @@ index.push({
     { code: 'C-24', label: 'Regular status', to: '/rewards/status', prep: rewardsMember },
     { code: 'C-25', label: 'Promotions', to: '/promotions', prep: member },
     { code: 'C-25', label: 'Promotions · Past', to: '/promotions?tab=past', prep: member },
-    { code: 'C-26', label: 'Promotion detail', to: '/promotions/free-pastry', prep: member },
+    { code: 'C-26', label: 'Promotion detail', to: `/promotions/${featuredPromotion?.id ?? 'welcome-10'}`, prep: member },
     { code: 'C-26', label: 'Promotion detail · Expired', to: '/promotions/weekend-combo', prep: member },
     { code: 'C-26', label: 'Promotion detail · Used', to: '/promotions/welcome-10', prep: member },
   ],

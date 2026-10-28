@@ -12,6 +12,7 @@ import {
   promotions,
   rewardById,
   rewards,
+  nextReward,
   type Activity,
   type Promotion,
   type Reward,
@@ -34,7 +35,7 @@ function TierProgress({ label, value }: { label: string; value: number }) {
   )
 }
 
-type RewardState = 'available' | 'need' | 'redeemed' | 'expired'
+type RewardState = 'available' | 'need' | 'redeemed' | 'used' | 'expired'
 
 /** Card / Reward */
 function RewardCard({
@@ -57,7 +58,9 @@ function RewardCard({
         ? `Need ${fmt(reward.cost - points)} more pts`
         : state === 'redeemed'
           ? 'Redeemed'
-          : 'Expired'
+          : state === 'used'
+            ? 'Used'
+            : 'Expired'
   return (
     <button className={`reward-card reward-card--${state}`} style={{ width }} onClick={onOpen}>
       <span className="reward-card__cost num">
@@ -102,7 +105,7 @@ function useRewardState() {
 }
 
 /** Points needed for the next free-drink milestone (1,400 pts in the Figma copy: 1,240 + 160). */
-const FREE_DRINK_MILESTONE = 1400
+
 
 /** C-20 Rewards */
 export function Rewards() {
@@ -119,9 +122,7 @@ export function Rewards() {
             <span className="t-caption muted">Points balance</span>
             <span className="t-display">{fmt(points)}</span>
             <span className="t-body-sm muted">
-              {points >= FREE_DRINK_MILESTONE
-                ? 'You have enough for a free drink'
-                : `${fmt(FREE_DRINK_MILESTONE - points)} pts to a free drink`}
+              {nextReward(points).text}
             </span>
             <TierProgress label="3 more orders to reach Loyal" value={75} />
           </div>
@@ -141,7 +142,8 @@ export function Rewards() {
               reward={r}
               state={stateOf(r)}
               points={points}
-              width={180}
+              // two cards and the edge of a third, so the row reads as one that scrolls
+              width={156}
               onOpen={() => navigate(`/rewards/${r.id}`)}
             />
           ))}
@@ -222,7 +224,7 @@ export function RewardCatalog() {
                     <RewardCard
                       key={m.rewardId}
                       reward={r}
-                      state={m.status === 'Redeemed' ? 'redeemed' : 'expired'}
+                      state={m.status === 'Redeemed' ? 'redeemed' : m.status === 'Used' ? 'used' : 'expired'}
                       points={points}
                       onOpen={() => navigate(`/rewards/${r.id}${m.status === 'Expired' ? '?state=expired' : ''}`)}
                     />
@@ -291,7 +293,7 @@ export function RewardDetail() {
               {fmt(reward.cost)}
               <span className="t-h3"> pts</span>
             </span>
-            <h1 className="t-display">{reward.name}</h1>
+            <h2 className="t-display">{reward.name}</h2>
           </header>
         </Row>
         {state === 'insufficient' && (
@@ -488,7 +490,10 @@ export function PromotionDetail() {
         promo.status === 'Expired' ? (
           <Button onClick={() => navigate('/promotions', { replace: true })}>See current offers</Button>
         ) : (
-          <Button disabled={promo.status === 'Used'} onClick={() => navigate('/menu')}>
+          <Button
+            disabled={promo.status === 'Used'}
+            onClick={() => navigate(promo.section ? `/menu?section=${promo.section}` : '/menu')}
+          >
             Order now
           </Button>
         )
@@ -497,7 +502,7 @@ export function PromotionDetail() {
       <div className="content detail-content">
         <Row>
           <header className={`board ${promo.status === 'Active' ? '' : 'board--dim'}`}>
-            <h1 className="t-display board__title">{promo.title}</h1>
+            <h2 className="t-display board__title">{promo.title}</h2>
             <span className="validity t-body-sm">
               <Icon name={promo.status === 'Used' ? 'check' : 'clock'} size={16} />
               {promo.validity}

@@ -49,18 +49,18 @@
 /* Status bar */
 .status-bar {
   flex-shrink: 0;
-  height: 59px;
+  height: var(--status-h);
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  padding: 0 var(--space-32) 10px;
+  padding: 0 var(--space-32) 12px;
   color: var(--ink);
 }
 .status-bar .t-button { font-variant-numeric: tabular-nums; }
 .status-bar--dark { color: var(--on-dark); }
 .status-bar__indicators {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   align-items: center;
   height: 24px;
 }
@@ -72,7 +72,7 @@
 /* Home indicator */
 .home-indicator {
   flex-shrink: 0;
-  height: 34px;
+  height: var(--home-h);
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -92,13 +92,13 @@
   height: 56px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   padding: 0 var(--space-16);
 }
 .top-bar--back { padding-left: 4px; }
 .top-bar__back {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -115,8 +115,8 @@
 }
 .top-bar__actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; margin-right: -10px; }
 .top-bar__action {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;

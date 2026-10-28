@@ -103,7 +103,14 @@ textarea {
   color: inherit;
 }
 
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
 button {
+  -webkit-user-select: none;
+  user-select: none;
   background: none;
   border: 0;
   padding: 0;
@@ -134,13 +141,13 @@ h3 {
   font-stretch: 115%;
   letter-spacing: -0.015em;
 }
-.t-h2 { font-size: 19px; line-height: 24px; font-weight: 650; font-stretch: 110%; letter-spacing: -0.01em; }
+.t-h2 { font-size: 20px; line-height: 26px; font-weight: 700; font-stretch: 110%; letter-spacing: -0.01em; }
 .t-h3 { font-size: 16px; line-height: 22px; font-weight: 600; }
-.t-body { font-size: 15px; line-height: 22px; font-weight: 400; }
+.t-body { font-size: 16px; line-height: 24px; font-weight: 400; }
 .t-body-sm { font-size: 14px; line-height: 20px; font-weight: 400; }
 .t-caption { font-size: 12px; line-height: 16px; font-weight: 500; }
-.t-button { font-size: 15px; line-height: 20px; font-weight: 600; }
-.t-price { font-size: 15px; line-height: 22px; font-weight: 600; font-variant-numeric: tabular-nums lining-nums; }
+.t-button { font-size: 16px; line-height: 20px; font-weight: 600; }
+.t-price { font-size: 16px; line-height: 22px; font-weight: 600; font-variant-numeric: tabular-nums lining-nums; }
 .num { font-variant-numeric: tabular-nums lining-nums; }
 .muted { color: var(--muted); }
 .link-text {

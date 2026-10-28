@@ -29,7 +29,7 @@
   background: transparent;
 }
 .bottom-nav__item.is-active { color: var(--ink); }
-.bottom-nav__item.is-active .t-caption { font-weight: 650; }
+.bottom-nav__item.is-active .t-caption { font-weight: 600; }
 .bottom-nav__item.is-active::before { background: var(--ink); }
 .bottom-nav__item:hover { color: var(--ink); }
 .bottom-nav__item:focus-visible { outline: 2px solid var(--ink); outline-offset: -4px; }
@@ -50,8 +50,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px 0;
+  gap: 12px;
+  padding: 12px 12px 0;
   color: var(--faint);
   white-space: nowrap;
 }
@@ -67,8 +67,8 @@
   height: 48px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 0 14px;
+  gap: 12px;
+  padding: 0 16px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-input);
@@ -100,11 +100,12 @@
 
 /* Chip */
 .chip {
+  position: relative;
   height: 36px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0 14px;
+  padding: 0 16px;
   border-radius: var(--radius-chip);
   background: var(--surface);
   border: 1px solid var(--border);
@@ -129,7 +130,7 @@
   color: var(--on-dark);
   font-weight: 600;
 }
-.badge--sm { padding: 1px 6px; }
+.badge--sm { padding: 1px 8px; }
 .badge--md { height: 24px; padding: 0 8px; }
 .badge--dark { background: var(--ink); }
 .badge--gold { background: var(--gold-pale); color: var(--gold-ink); }
@@ -145,8 +146,8 @@
   min-height: 72px;
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 12px 14px 12px 16px;
+  gap: 16px;
+  padding: 12px 16px 12px 16px;
   background: var(--ink);
   color: var(--on-dark);
   border-radius: var(--radius-card);
@@ -177,7 +178,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 12px 16px 16px;
+  padding: 16px 12px 16px 16px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
@@ -194,7 +195,7 @@
 .points-strip__head {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 .points-strip__track {
   display: block;
@@ -248,16 +249,16 @@
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  margin-top: 6px;
+  margin-top: 8px;
   color: var(--on-dark);
 }
 .poster__hit:hover .poster__cta { text-decoration: underline; text-underline-offset: 4px; }
 .poster__dismiss {
   position: absolute;
-  right: 6px;
-  top: 6px;
-  width: 44px;
-  height: 44px;
+  right: 4px;
+  top: 4px;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -282,13 +283,29 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 2px;
-  padding: 14px 16px;
+  padding: 16px 16px;
   background: var(--surface);
   text-align: left;
 }
 .category-cell:hover { background: var(--raised); }
 .category-strip--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .category-strip--3 .category-cell { min-height: 64px; justify-content: center; padding: 12px; }
+.category-strip--3 .category-cell--photo { justify-content: flex-start; padding: 0 0 12px; gap: 2px; }
+.category-cell--photo > span { padding: 0 12px; }
+/* "Non-Coffee" stays on one line in a third of the width */
+.category-cell--photo > .t-h3 { white-space: nowrap; font-stretch: 92%; }
+.category-cell__photo {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  margin-bottom: 8px;
+  transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+}
+.category-cell--photo { overflow: hidden; }
+.category-cell--photo:hover .category-cell__photo { transform: scale(1.03); }
+@media (prefers-reduced-motion: reduce) {
+  .category-cell__photo { transition: none; }
+}
 
 /* Reorder */
 .reorder-card {
@@ -330,47 +347,83 @@
   border-radius: var(--radius-card);
   overflow: hidden;
 }
-/* One row per item: photo, then name / what is in it / tag, then the price range.
-   The whole row is one button and every row is the same height. */
-.menu-row {
+/* Product row: photo, name, what is in it, price and tag; the + sits beside the row button.
+   Used on Home, in sections, search and the menu list, so every list of items looks the same. */
+.mitem { position: relative; padding: 0 12px; }
+.mitem + .mitem::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 12px;
+  right: 12px;
+  border-top: 1px solid var(--rule);
+}
+.mitem__open {
   width: 100%;
-  height: 88px;
+  height: 104px;
   display: grid;
-  grid-template-columns: 60px minmax(0, 1fr) auto;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 12px;
   align-items: center;
-  gap: 10px;
-  padding: 0 12px 0 10px;
   text-align: left;
-  background: var(--surface);
-  transition: background-color 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+  padding-right: 44px;
 }
-.menu-row + .menu-row { border-top: 1px solid var(--rule); }
-.menu-row:hover { background: var(--raised); }
-.menu-row:active { background: var(--active); }
-.menu-row:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
-.menu-row__info {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-}
-.menu-row__title,
-.menu-row__blurb {
-  max-width: 100%;
-  white-space: nowrap;
+.mitem__open .product-thumb { width: 72px; height: 72px; }
+.mitem__open:hover .mitem__name { text-decoration: underline; text-underline-offset: 3px; }
+.mitem__open:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+.mitem__text { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.mitem__name {
+  font-stretch: 92%;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
-/* Names run long ("Caramel Mocha Macadamia Oat Coffee"): a slightly narrower cut keeps most on one line */
-.menu-row__title { font-stretch: 92%; }
-.menu-row__tag { margin-top: 4px; display: flex; }
-.menu-row__price {
+/* One line, clamped by line rather than clipped sideways, so no hidden text runs past the row */
+.mitem__blurb {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
+}
+.mitem__price {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  text-align: right;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin-top: 4px;
 }
+.mitem__price .badge { align-self: center; }
+/* "₱150.00–170.00": the upper price runs straight on from the lower one */
+.mitem__price .mitem__to { margin-left: -8px; font-size: 14px; }
+.mitem__add {
+  position: absolute;
+  right: 2px;
+  bottom: 10px;
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+}
+.mitem__add::before {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  background: var(--ink);
+  transition: transform 0.2s cubic-bezier(0.32, 0.72, 0, 1), background-color 0.2s;
+}
+.mitem__add .icon { position: relative; color: var(--on-dark); }
+.mitem__add:hover::before { background: var(--steel); }
+.mitem__add:active::before { transform: scale(0.92); }
+.mitem__add:disabled { cursor: not-allowed; }
+.mitem__add:disabled::before { background: var(--active); }
+.mitem__add:disabled .icon { color: var(--faint); }
+/* Sold out: still readable, clearly not orderable */
+.mitem--sold-out .product-thumb,
+.mitem--sold-out .mitem__name,
+.mitem--sold-out .mitem__price .t-price { opacity: 0.55; }
+.mitem__add:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; border-radius: 50%; }
 
 /* Product photo: the cafe's cut-outs sit whole on a light tile, never cropped */
 .product-thumb {
@@ -404,7 +457,7 @@
   position: absolute;
   left: 16px;
   right: 16px;
-  bottom: 110px;
+  bottom: calc(64px + var(--home-h) + 12px);
   height: 56px;
   display: flex;
   align-items: center;
@@ -419,11 +472,11 @@
   animation: rise 0.2s ease-out;
 }
 .cart-bar:hover { background: var(--steel); }
-.cart-bar--no-nav { bottom: 46px; }
+.cart-bar--no-nav { bottom: calc(var(--home-h) + 12px); }
 .cart-bar__count {
   min-width: 26px;
   height: 26px;
-  padding: 0 6px;
+  padding: 0 8px;
   border-radius: 13px;
   background: var(--gold);
   color: var(--ink);
@@ -492,15 +545,15 @@
   grid-template-columns: auto 32px auto;
   align-items: center;
   height: 52px;
-  padding: 0 3px;
+  padding: 0 1px;
   border: 1px solid var(--control);
   border-radius: var(--radius-button);
   background: var(--surface);
   flex-shrink: 0;
 }
 .stepper button {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   border-radius: 4px;
   display: flex;
   align-items: center;
@@ -510,15 +563,14 @@
 .stepper button:hover:not(:disabled) { background: var(--raised); }
 .stepper button:active:not(:disabled) { background: var(--active); }
 .stepper button:disabled { color: var(--control); cursor: not-allowed; }
-.stepper--S { height: 44px; padding: 0 1px; grid-template-columns: auto 28px auto; }
-.stepper--S button { width: 40px; height: 40px; }
+.stepper--S { height: 50px; padding: 0; grid-template-columns: auto 28px auto; }
 .stepper__remove { color: var(--negative) !important; }
 .stepper__value { text-align: center; }
 
 /* Textarea */
 .textarea {
   height: 92px;
-  padding: 12px 14px;
+  padding: 12px 16px;
   border: 1px solid var(--control);
   border-radius: var(--radius-input);
   background: var(--surface);
@@ -535,8 +587,8 @@
 /* Control on a dark header */
 .hero-control {
   position: absolute;
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -584,3 +636,6 @@
   .cart-bar { animation: none; }
   .skeleton { animation: none; }
 }
+
+/* UI-05: every chip answers a 48px tap, though it draws at 36px */
+.chip::after { content: ''; position: absolute; inset: -6px 0; }

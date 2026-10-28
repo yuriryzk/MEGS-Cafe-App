@@ -8,7 +8,8 @@ import { Button, Photo, TextField } from '../components/ui'
 import { Icon } from '../components/Icon'
 import counterPhoto from '../assets/photos/counter-cup-meal.webp'
 import { peso, productById } from '../data/menu'
-import { quickAddLine, tierDiscount, useApp } from '../state/AppState'
+import { featuredPromotion, freeItemsLine, rewardById, rewardSavings } from '../data/rewards'
+import { COUNTER, quickAddLine, tierDiscount, useApp } from '../state/AppState'
 import './overlays.css'
 
 export type OverlayId =
@@ -147,9 +148,11 @@ function OverlayContent({
 
   switch (id) {
     /* O-01 Promo modal */
-    case 'promo':
+    case 'promo': {
+      const promo = featuredPromotion
+      if (!promo) return null
       return (
-        <div className="dialog dialog--promo" role="dialog" aria-modal aria-label="Free pastry with any large drink">
+        <div className="dialog dialog--promo" role="dialog" aria-modal aria-label={promo.title}>
           <div className="dialog--promo__hero">
             <Photo
               src={counterPhoto}
@@ -162,12 +165,12 @@ function OverlayContent({
             </button>
           </div>
           <div className="dialog--promo__body">
-            <h2 className="t-h2">Free pastry with any large drink</h2>
-            <p className="t-body muted">Order any large drink and get a butter croissant on us.</p>
+            <h2 className="t-h2">{promo.title}</h2>
+            <p className="t-body muted">{promo.description}</p>
             <Button
               onClick={() => {
                 close()
-                navigate('/promotions/free-pastry')
+                navigate(`/promotions/${promo.id}`)
               }}
             >
               View offer
@@ -175,6 +178,7 @@ function OverlayContent({
           </div>
         </div>
       )
+    }
 
     /* O-02 Quick add */
     case 'quick-add':
@@ -214,7 +218,9 @@ function OverlayContent({
       return (
         <Sheet title="Payment method" onClose={close}>
           <div role="radiogroup" aria-label="Payment method">
-            {app.paymentMethods.map(({ label: m }) => (
+            {app.paymentMethods
+              .filter(({ label }) => !(app.fulfillment === 'delivery' && label === COUNTER))
+              .map(({ label: m }) => (
               <Radio
                 key={m}
                 name="payment"
@@ -225,7 +231,7 @@ function OverlayContent({
                   setTimeout(close, 150)
                 }}
               />
-            ))}
+              ))}
           </div>
         </Sheet>
       )
@@ -469,9 +475,11 @@ function QuickAddSheet({ productId, close }: { productId: string; close: () => v
 function DiscountsSheet({ close }: { close: () => void }) {
   const app = useApp()
   const member = app.session === 'member'
-  const [reward, setReward] = useState<string | null>('Free drink (200 pts)')
+  const [choice, setChoice] = useState<string | null>(app.appliedReward)
   const [code, setCode] = useState('')
   const [error, setError] = useState('')
+  const usable = app.myRewards.filter((m) => m.status === 'Redeemed')
+  const expired = app.myRewards.filter((m) => m.status === 'Expired')
 
   return (
     <Sheet title="Discounts and rewards" onClose={close}>
@@ -481,17 +489,46 @@ function DiscountsSheet({ close }: { close: () => void }) {
       ) : (
         <p className="t-body-sm muted">Log in to get your Regular discount.</p>
       )}
+      {app.totals.offer && (
+        <div className="offer-applied">
+          <span className="t-body">{app.totals.offer.name}</span>
+          <span className="t-price num">−{peso(app.totals.offer.amount)}</span>
+          <span className="t-body-sm muted">{app.totals.offer.note} · applied automatically</span>
+        </div>
+      )}
       <hr className="divider" />
       <h3 className="t-h3">Your rewards</h3>
-      <div role="radiogroup" aria-label="Your rewards">
-        <Radio
-          name="reward"
-          label="Free drink (200 pts)"
-          checked={reward === 'Free drink (200 pts)'}
-          onChange={() => setReward('Free drink (200 pts)')}
-        />
-        <Radio name="reward" label="Free pastry (120 pts) · Expired" checked={false} onChange={() => {}} disabled />
-      </div>
+      {usable.length === 0 ? (
+        <p className="t-body-sm muted">You have no rewards to use. Redeem one with your points in Rewards.</p>
+      ) : (
+        <div role="radiogroup" aria-label="Your rewards">
+          <Radio name="reward" label="Don't use a reward" checked={choice === null} onChange={() => setChoice(null)} />
+          {usable.map((m) => {
+            const r = rewardById(m.rewardId)
+            if (!r) return null
+            const s = rewardSavings(r, app.cart)
+            return (
+              <div key={r.id} className="reward-choice">
+                <Radio
+                  name="reward"
+                  label={r.name}
+                  checked={choice === r.id}
+                  onChange={() => setChoice(r.id)}
+                  disabled={!s.applies}
+                  priceDelta={s.applies ? `−${peso(s.amount)}` : undefined}
+                />
+                <p className="t-body-sm muted reward-choice__note">
+                  {s.applies ? `Free: ${freeItemsLine(s.items)}` : `Add ${s.missing} to your order to use this.`}
+                </p>
+              </div>
+            )
+          })}
+        </div>
+      )}
+      {expired.map((m) => {
+        const r = rewardById(m.rewardId)
+        return r ? <Radio key={r.id} name="reward-expired" label={`${r.name} · Expired`} checked={false} onChange={() => {}} disabled /> : null
+      })}
       <hr className="divider" />
       <h3 className="t-h3">Promo code</h3>
       <div className="promo-row">
@@ -518,6 +555,7 @@ function DiscountsSheet({ close }: { close: () => void }) {
       <Button
         onClick={() => {
           app.setUseTierDiscount(true)
+          app.setAppliedReward(choice)
           close()
         }}
       >
@@ -526,3 +564,4 @@ function DiscountsSheet({ close }: { close: () => void }) {
     </Sheet>
   )
 }
+

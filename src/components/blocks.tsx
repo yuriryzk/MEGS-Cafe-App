@@ -256,9 +256,23 @@ export function PromoBanner({
 }
 
 /** Category cell in the menu-section strip: the name and how many items it holds. */
-export function CategoryTile({ label, count, onClick }: { label: string; count?: number; onClick: () => void }) {
+export function CategoryTile({
+  label,
+  count,
+  onClick,
+  photo,
+  position = '50% 50%',
+}: {
+  label: string
+  count?: number
+  onClick: () => void
+  /** A photo of what the group holds, cropped square above the label */
+  photo?: string
+  position?: string
+}) {
   return (
-    <button className="category-cell" onClick={onClick}>
+    <button className={`category-cell ${photo ? 'category-cell--photo' : ''}`} onClick={onClick}>
+      {photo && <img className="category-cell__photo" src={photo} alt="" style={{ objectPosition: position }} />}
       <span className="t-h3">{label}</span>
       {count != null && <span className="t-body-sm muted num">{count} items</span>}
     </button>
@@ -290,8 +304,16 @@ export function ReorderCard({
 
 /* ---------- Products: the menu board ---------- */
 
-/** Product / Row — one line of the menu board. The whole row opens the product: photo, name, what is in it,
- *  its tag, and the price range. Every row is the same height. */
+type ProductCardProps = {
+  product: Product
+  onOpen: () => void
+  /** Leave out a badge the list already says (no "Best Seller" tag inside Best Sellers) */
+  hideBadge?: string
+}
+
+/** Product / Row — one item on the menu: photo, name, what is in it, price and its tag. The row opens
+ *  the product; the + beside it (a sibling, never nested) opens it too, to choose options. Every row is
+ *  the same height. */
 /** Menu thumbnail. Shows the product photo, or a placeholder tile until one exists. */
 export function ProductThumb({ product, size = 'M' }: { product: Product; size?: 'S' | 'M' | 'L' }) {
   const cls = `product-thumb product-thumb--${size}`
@@ -305,39 +327,48 @@ export function ProductThumb({ product, size = 'M' }: { product: Product; size?:
   )
 }
 
-export function ProductRow({ product, onOpen }: ProductCardProps) {
+export function ProductRow({ product: p, onOpen, hideBadge }: ProductCardProps) {
+  const badge = p.badges.find((b) => b !== hideBadge)
+  const soldOut = !p.available
   return (
-    <button className="menu-row" onClick={onOpen}>
-      <ProductThumb product={product} />
-      <span className="menu-row__info">
-        <span className="t-h3 menu-row__title" title={product.name}>
-          {product.name}
-        </span>
-        <span className="t-body-sm muted menu-row__blurb">{product.blurb}</span>
-        {product.badge && (
-          <span className="menu-row__tag">
-            <Badge tone="gold">{product.badge}</Badge>
+    <div className={`mitem ${soldOut ? 'mitem--sold-out' : ''}`}>
+      <button className="mitem__open" onClick={onOpen}>
+        <ProductThumb product={p} />
+        <span className="mitem__text">
+          <span className="t-h3 mitem__name">{p.name}</span>
+          <span className="t-body-sm muted mitem__blurb">{p.blurb}</span>
+          <span className="mitem__price num">
+            <span className="t-price">{peso(p.price)}</span>
+            {/* the range on one line: ₱150.00–170.00 */}
+            {p.priceMax > p.price && <span className="t-caption muted mitem__to">–{peso(p.priceMax).slice(1)}</span>}
+            {soldOut ? <Badge tone="muted">Sold out</Badge> : badge && <Badge tone="gold">{badge}</Badge>}
           </span>
-        )}
-      </span>
-      <span className="menu-row__price num">
-        <span className="t-price">{peso(product.price)}</span>
-        {product.priceMax > product.price && <span className="t-caption muted">to {peso(product.priceMax)}</span>}
-      </span>
-    </button>
+        </span>
+      </button>
+      <button
+        className="mitem__add"
+        aria-label={soldOut ? `${p.name} is sold out` : `Choose options for ${p.name}`}
+        onClick={onOpen}
+        disabled={soldOut}
+      >
+        <Icon name="plus" size={18} />
+      </button>
+    </div>
   )
 }
 
-/** Menu-board row skeleton (Home / Loading) — the final layout with flat bars at real size. */
+/** Product row skeleton (Home / Loading) — the final layout with flat bars at real size. */
 export function ProductRowSkeleton() {
   return (
-    <div className="menu-row" aria-hidden>
-      <span className="skeleton" style={{ width: 56, height: 56 }} />
-      <span className="menu-row__info">
-        <span className="skeleton" style={{ width: 130, height: 18 }} />
-        <span className="skeleton" style={{ width: 150, height: 14 }} />
+    <div className="mitem" aria-hidden>
+      <span className="mitem__open">
+        <span className="skeleton" style={{ width: 72, height: 72 }} />
+        <span className="mitem__text">
+          <span className="skeleton" style={{ width: 132, height: 18 }} />
+          <span className="skeleton" style={{ width: 160, height: 14 }} />
+          <span className="skeleton" style={{ width: 64, height: 16 }} />
+        </span>
       </span>
-      <span className="skeleton" style={{ width: 44, height: 18 }} />
     </div>
   )
 }

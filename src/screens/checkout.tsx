@@ -19,10 +19,9 @@ import { Button, Checkbox, Loader, TextField } from '../components/ui'
 import { Icon } from '../components/Icon'
 import { Lamp } from '../components/Lamp'
 import { peso } from '../data/menu'
+import { offerHint } from '../data/rewards'
 import {
-  DELIVERY_FEE,
   FREE_DRINK_THRESHOLD,
-  tierDiscount,
   useApp,
   type Address,
 } from '../state/AppState'
@@ -31,10 +30,7 @@ import './checkout.css'
 
 /** Totals for the current cart, fulfillment and discount choice. */
 function useTotals() {
-  const { cartTotal, fulfillment, session, useTierDiscount } = useApp()
-  const discount = session === 'member' && useTierDiscount ? tierDiscount(cartTotal) : 0
-  const deliveryFee = fulfillment === 'delivery' ? DELIVERY_FEE : 0
-  return { subtotal: cartTotal, discount, deliveryFee, total: cartTotal - discount + deliveryFee }
+  return useApp().totals
 }
 
 function EmptyCart() {
@@ -58,8 +54,9 @@ export function Cart() {
   const navigate = useNavigate()
   const overlay = useOverlay()
   const { cart, setQty, fulfillment, addresses, addressId } = useApp()
-  const { subtotal, discount, deliveryFee, total } = useTotals()
+  const { subtotal, reward, offer, discount, deliveryFee, total } = useTotals()
   const address = addresses.find((a) => a.id === addressId)
+  const hint = offerHint(cart)
 
   if (cart.length === 0) return <EmptyCart />
 
@@ -99,13 +96,18 @@ export function Cart() {
             </Button>
           </div>
         </Row>
+        {hint && (
+          <Row>
+            <Alert tone="success">{hint}</Alert>
+          </Row>
+        )}
         {subtotal < FREE_DRINK_THRESHOLD && (
           <Row>
             <Alert>Add {peso(FREE_DRINK_THRESHOLD - subtotal)} more to get a free drink.</Alert>
           </Row>
         )}
         <Row>
-          <PriceBreakdown subtotal={subtotal} discount={discount} deliveryFee={deliveryFee} />
+          <PriceBreakdown subtotal={subtotal} reward={reward} offer={offer} discount={discount} deliveryFee={deliveryFee} />
         </Row>
       </Content>
     </Screen>
@@ -266,7 +268,7 @@ export function Checkout() {
   const [params] = useSearchParams()
   const app = useApp()
   const { cart, cartCount, fulfillment, addresses, addressId, payment, session, useTierDiscount, placeOrder } = app
-  const { subtotal, discount, deliveryFee, total } = useTotals()
+  const { subtotal, reward, offer, discount, deliveryFee, total } = useTotals()
   const overlay = useOverlay()
   const [note, setNote] = useState('')
   const [processing, setProcessing] = useState(params.get('state') === 'processing')
@@ -339,7 +341,15 @@ export function Checkout() {
             <OptionRow
               icon="tag"
               label="Discount & rewards"
-              value={session === 'member' ? (useTierDiscount ? 'Regular discount' : 'None') : 'Log in to use'}
+              value={
+                session !== 'member'
+                  ? 'Log in to use'
+                  : reward
+                    ? reward.name
+                    : useTierDiscount
+                      ? 'Regular discount'
+                      : 'None'
+              }
               onClick={() => overlay.open('discounts')}
             />
             <OptionRow icon="card" label="Payment method" value={payment} onClick={() => overlay.open('payment')} />
@@ -355,7 +365,7 @@ export function Checkout() {
           />
         </Row>
         <Row>
-          <PriceBreakdown subtotal={subtotal} discount={discount} deliveryFee={deliveryFee} />
+          <PriceBreakdown subtotal={subtotal} reward={reward} offer={offer} discount={discount} deliveryFee={deliveryFee} />
         </Row>
       </Content>
     </Screen>
@@ -407,6 +417,18 @@ export function OrderConfirmation() {
               <div className="confirmation__row t-body-sm">
                 <span>Regular discount</span>
                 <span className="num">−{peso(lastOrder.discount)}</span>
+              </div>
+            )}
+            {!!lastOrder.offerDiscount && (
+              <div className="confirmation__row t-body-sm">
+                <span>{lastOrder.offerName}</span>
+                <span className="num">−{peso(lastOrder.offerDiscount)}</span>
+              </div>
+            )}
+            {!!lastOrder.rewardDiscount && (
+              <div className="confirmation__row t-body-sm">
+                <span>{lastOrder.rewardName}</span>
+                <span className="num">−{peso(lastOrder.rewardDiscount)}</span>
               </div>
             )}
             {lastOrder.deliveryFee > 0 && (

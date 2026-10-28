@@ -9,22 +9,46 @@ import {
   Logo,
   OtpInput,
   PaginationDots,
+  PasswordField,
   Photo,
   RuleCheck,
   TextField,
 } from '../components/ui'
+import { Alert } from '../components/order'
 import { toIntl, useApp } from '../state/AppState'
-import counterPhoto from '../assets/photos/counter-cup-meal.webp'
+import lineupPhoto from '../assets/photos/iced-coffee-lineup.webp'
+import wingsPhoto from '../assets/photos/wings-and-drinks.webp'
+import logoWallPhoto from '../assets/photos/logo-wall-breakfast.webp'
 import interiorPhoto from '../assets/photos/interior-banquette.webp'
 import './account.css'
+
+/** Onboarding shows on the first launch only; Reset demo data clears this with the rest */
+const ONBOARDED = 'megs.onboarded'
+const onboarded = () => {
+  try {
+    return window.localStorage.getItem(ONBOARDED) === '1'
+  } catch {
+    return false
+  }
+}
+const markOnboarded = () => {
+  try {
+    window.localStorage.setItem(ONBOARDED, '1')
+  } catch {
+    /* storage blocked: onboarding shows again next time, which is harmless */
+  }
+}
 
 /** C-01 Splash */
 export function Splash() {
   const navigate = useNavigate()
+  const { session } = useApp()
   useEffect(() => {
-    const t = setTimeout(() => navigate('/onboarding/1', { replace: true }), 1600)
+    // SRS FR-ACC-09 / FR-ACC-10: Home for a valid session, onboarding on the first launch only, otherwise Welcome
+    const next = session === 'member' ? '/home' : onboarded() ? '/welcome' : '/onboarding/1'
+    const t = setTimeout(() => navigate(next, { replace: true }), 1600)
     return () => clearTimeout(t)
-  }, [navigate])
+  }, [navigate, session])
 
   return (
     <Screen theme="dark" bg="secondary" bodyClassName="splash">
@@ -43,23 +67,23 @@ const slides = [
   {
     title: 'Order ahead, skip the queue',
     body: 'Pick your drink, choose pickup or delivery, and it is ready when you are.',
-    photo: counterPhoto,
-    position: '50% 78%',
-    alt: "A MEGS' kraft cup and a plate of chicken and rice on a cafe table",
+    photo: lineupPhoto,
+    position: '50% 62%',
+    alt: "A row of iced lattes and an americano under the cafe's black wall lamps",
   },
   {
     title: 'Earn points, get rewards',
     body: 'Every order earns points toward free drinks and treats.',
-    photo: interiorPhoto,
-    position: '50% 45%',
-    alt: "MEGS' Cafe seating: an orange banquette, wooden chairs and black wall lamps on concrete",
+    photo: wingsPhoto,
+    position: '50% 38%',
+    alt: "Five baskets of chicken wings with ube, chocolate and matcha drinks in MEGS' cups",
   },
   {
     title: 'Track your order live',
     body: 'See every step from the counter to your hands, with a nudge when it is ready.',
-    photo: counterPhoto,
-    position: '50% 14%',
-    alt: "The MEGS' sign on the concrete wall: The best time is coffee time",
+    photo: logoWallPhoto,
+    position: '50% 42%',
+    alt: "Rice meals and iced drinks at the counter, under the MEGS' crowned logo and The best time is coffee time",
   },
 ]
 
@@ -75,7 +99,12 @@ export function Onboarding({ slide }: { slide: number }) {
       statusOverlay
       statusTheme="dark"
       footer={
-        <Button onClick={() => navigate(last ? '/welcome' : `/onboarding/${slide + 2}`)}>
+        <Button
+          onClick={() => {
+            if (last) markOnboarded()
+            navigate(last ? '/welcome' : `/onboarding/${slide + 2}`)
+          }}
+        >
           {last ? 'Get started' : 'Next'}
         </Button>
       }
@@ -85,7 +114,10 @@ export function Onboarding({ slide }: { slide: number }) {
           height={40}
           full={false}
           className="onboarding__skip"
-          onClick={() => navigate('/welcome')}
+          onClick={() => {
+            markOnboarded()
+            navigate('/welcome')
+          }}
         >
           Skip
         </Button>
@@ -157,8 +189,11 @@ export function SignUp() {
   const navigate = useNavigate()
   const { phone, setPhone, name, setName } = useApp()
   const [email, setEmail] = useState('')
-  const [agreed, setAgreed] = useState(true)
-  const valid = name.trim() !== '' && phone.replace(/\D/g, '').length >= 10 && agreed
+  const [password, setPassword] = useState('')
+  // DPA: consent is the customer's to give, so the box starts unticked
+  const [agreed, setAgreed] = useState(false)
+  const strong = password.length >= 8 && /\d/.test(password)
+  const valid = name.trim() !== '' && phone.replace(/\D/g, '').length >= 10 && strong && agreed
 
   return (
     <Screen
@@ -196,6 +231,15 @@ export function SignUp() {
           />
         </Row>
         <Row>
+          <PasswordField
+            label="Password"
+            helper="8 or more characters, with at least one number"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="new-password"
+          />
+        </Row>
+        <Row>
           <Checkbox label="I agree to the Terms and Privacy Policy" checked={agreed} onChange={setAgreed} />
         </Row>
       </Content>
@@ -203,14 +247,16 @@ export function SignUp() {
   )
 }
 
+const RESEND_AFTER = 30
+
 /** C-05 Verification — `?mode=reset` continues to Reset Password instead of Home. */
 export function Verification() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const reset = params.get('mode') === 'reset'
   const { phone, setSession, setFirstLaunch } = useApp()
-  const [code, setCode] = useState('123456')
-  const [resent, setResent] = useState(false)
+  const [code, setCode] = useState('')
+  const [wait, setWait] = useState(RESEND_AFTER)
 
   const verify = () => {
     if (reset) return navigate('/reset-password')
@@ -218,6 +264,19 @@ export function Verification() {
     setFirstLaunch(true)
     navigate('/home', { replace: true })
   }
+
+  // SRS FR-ACC-05: resend only after a 30-second cooldown, showing the time left
+  useEffect(() => {
+    if (wait <= 0) return
+    const t = setTimeout(() => setWait((w) => w - 1), 1000)
+    return () => clearTimeout(t)
+  }, [wait])
+
+  // SRS FR-ACC-04: the sixth digit submits the code (the prototype accepts any six digits)
+  useEffect(() => {
+    if (code.length === 6) verify()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [code])
 
   return (
     <Screen
@@ -244,9 +303,15 @@ export function Verification() {
           <OtpInput value={code} onChange={setCode} />
         </Row>
         <Row>
-          <button className="t-body link-text resend" onClick={() => setResent(true)}>
-            {resent ? 'Code sent again' : 'Resend code'}
-          </button>
+          {wait > 0 ? (
+            <p className="t-body muted resend" aria-live="polite">
+              Resend code in 0:{String(wait).padStart(2, '0')}
+            </p>
+          ) : (
+            <button className="t-body link-text resend" onClick={() => setWait(RESEND_AFTER)}>
+              Resend code
+            </button>
+          )}
         </Row>
       </Content>
     </Screen>
@@ -256,6 +321,7 @@ export function Verification() {
 /** C-06 Log In */
 export function LogIn() {
   const navigate = useNavigate()
+  const [params] = useSearchParams()
   const { setSession } = useApp()
   const [id, setId] = useState('maria@email.com')
   const [password, setPassword] = useState('password1')
@@ -279,6 +345,11 @@ export function LogIn() {
         <Row>
           <h1 className="t-h1">Log in</h1>
         </Row>
+        {params.get('updated') && (
+          <Row>
+            <Alert tone="success">Password updated. Log in with your new password.</Alert>
+          </Row>
+        )}
         <Row>
           <TextField
             label="Mobile number or email"
@@ -288,9 +359,8 @@ export function LogIn() {
           />
         </Row>
         <Row>
-          <TextField
+          <PasswordField
             label="Password"
-            type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="current-password"
@@ -356,7 +426,7 @@ export function ResetPassword() {
       footer={
         <Button
           disabled={!longEnough || !hasNumber || pw !== confirm}
-          onClick={() => navigate('/log-in', { replace: true })}
+          onClick={() => navigate('/log-in?updated=1', { replace: true })}
         >
           Save password
         </Button>
@@ -367,12 +437,11 @@ export function ResetPassword() {
           <h1 className="t-h1">Set a new password</h1>
         </Row>
         <Row>
-          <TextField label="New password" type="password" value={pw} onChange={(e) => setPw(e.target.value)} />
+          <PasswordField label="New password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="new-password" />
         </Row>
         <Row>
-          <TextField
+          <PasswordField
             label="Confirm password"
-            type="password"
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
           />
