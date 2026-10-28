@@ -1,0 +1,138 @@
+.screen {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: clip;
+}
+.screen--bg-background { background: var(--ground); }
+.screen--bg-surface { background: var(--surface); }
+.screen--bg-secondary { background: var(--ink); color: var(--on-dark); }
+
+.screen__status-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.screen__body {
+  flex: 1 0 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+}
+.screen__body::-webkit-scrollbar { display: none; }
+
+.content {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-8) 0 var(--space-32);
+  flex-shrink: 0;
+  width: 100%;
+}
+
+.row {
+  display: flex;
+  align-items: flex-start;
+  padding: 0 var(--space-16);
+  width: 100%;
+}
+.row > * { flex: 1 0 0; min-width: 0; }
+
+/* Status bar */
+.status-bar {
+  flex-shrink: 0;
+  height: 59px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0 var(--space-32) 10px;
+  color: var(--ink);
+}
+.status-bar .t-button { font-variant-numeric: tabular-nums; }
+.status-bar--dark { color: var(--on-dark); }
+.status-bar__indicators {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  height: 24px;
+}
+.status-bar__indicators span { background: currentColor; display: block; }
+.status-bar__signal { width: 18px; height: 10px; border-radius: 2px; }
+.status-bar__wifi { width: 14px; height: 10px; border-radius: 5px; }
+.status-bar__battery { width: 26px; height: 12px; border-radius: 3px; }
+
+/* Home indicator */
+.home-indicator {
+  flex-shrink: 0;
+  height: 34px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: var(--space-8);
+}
+.home-indicator span {
+  width: 134px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--ink);
+}
+.home-indicator--dark span { background: var(--on-dark); }
+
+/* Top bar — sits on the concrete, no band of its own */
+.top-bar {
+  flex-shrink: 0;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 var(--space-16);
+}
+.top-bar--back { padding-left: 4px; }
+.top-bar__back {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: var(--radius-button);
+}
+.top-bar__back:hover { background: var(--active); }
+.top-bar__title {
+  flex: 1 0 0;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.top-bar__actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; margin-right: -10px; }
+.top-bar__action {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-button);
+}
+.top-bar__action:hover { background: var(--active); }
+.top-bar__back:focus-visible,
+.top-bar__action:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+
+/* Sticky footer — a white counter top */
+.sticky-footer {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  padding: var(--space-12) var(--space-16);
+  background: var(--surface);
+}
+.sticky-footer--border { border-top: 1px solid var(--border); }

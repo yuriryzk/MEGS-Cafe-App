@@ -1,0 +1,73 @@
+﻿id,name,section,kind,badge,price,price_cold_16oz,price_cold_22oz,price_hot_12oz,oat_milk_swap,description,blurb,image,is_new,is_available,is_active,sort_order
+mocha,Mocha,espresso,drink,,,120,135,135,yes,Espresso and chocolate with milk. A classic mocha.,"Espresso, chocolate, milk",,no,yes,yes,1
+vanilla,Vanilla,espresso,drink,,,120,130,130,yes,Espresso with milk and vanilla.,"Espresso, vanilla, milk",,no,yes,yes,2
+hazelnut,Hazelnut,espresso,drink,Best Seller,,120,140,140,yes,Espresso with milk and hazelnut.,"Espresso, hazelnut, milk",,no,yes,yes,3
+mocha-hazelnut,Mocha Hazelnut,espresso,drink,Must-Try,,135,145,145,yes,"Espresso with milk, chocolate and hazelnut.",Chocolate and hazelnut latte,mocha-hazelnut.webp,no,yes,yes,4
+toasted-mocha,Toasted Mocha,espresso,drink,,,135,145,145,yes,"Our mocha, espresso, chocolate and milk, with a toasted finish.",Mocha with a toasted finish,toasted-mocha.webp,no,yes,yes,5
+cloudy-hazelnut,Cloudy Hazelnut,espresso,drink,Must-Try,,140,150,150,yes,Hazelnut latte topped with a soft cloud of cream.,"Hazelnut latte, cream on top",cloudy-hazelnut.webp,no,yes,yes,6
+white-mocha,White Mocha,espresso,drink,Best Seller,,120,130,130,yes,Espresso with milk and white chocolate.,"Espresso, white chocolate",white-mocha.webp,no,yes,yes,7
+white-mocha-mallows,White Mocha Mallows,espresso,drink,,,130,140,140,yes,White mocha topped with marshmallows.,White mocha with marshmallows,white-mocha-mallows.webp,no,yes,yes,8
+ube-spanish-latte,Ube Spanish Latte,espresso,drink,Must-Try,,120,130,130,yes,"Espresso, milk and condensed milk with ube (purple yam).",Spanish latte with ube,,no,yes,yes,9
+matcha-coffee,Matcha Coffee,espresso,drink,,,125,135,135,yes,Matcha and milk with a shot of espresso.,Matcha with espresso,matcha-coffee.webp,no,yes,yes,10
+spanish-matcha-coffee,Spanish Matcha Coffee,espresso,drink,,,130,140,140,yes,"Matcha, milk and espresso, sweetened with condensed milk.",Sweet matcha with espresso,spanish-matcha-coffee.webp,no,yes,yes,11
+biscoff-latte,Biscoff Latte,espresso,drink,Must-Try,,160,180,180,yes,Espresso and milk with Biscoff cookie spread.,Latte with Biscoff,,no,yes,yes,12
+oat-coffee,Oat Coffee,oat-coffee,drink,Best Seller,,130,150,150,no,Espresso with oat milk.,Espresso and oat milk,oat-coffee.webp,no,yes,yes,13
+spanish-oat-coffee,Spanish Oat Coffee,oat-coffee,drink,Must-Try,,135,155,155,no,"Espresso and oat milk, sweetened with condensed milk.",Spanish latte with oat milk,spanish-oat-coffee.webp,no,yes,yes,14
+macadamia-oat-coffee,Macadamia Oat Coffee,oat-coffee,drink,Best Seller,,150,170,170,no,Espresso and oat milk with macadamia.,Oat latte with macadamia,macadamia-oat-coffee.webp,no,yes,yes,15
+mocha-macadamia-oat-coffee,Mocha Macadamia Oat Coffee,oat-coffee,drink,Must-Try,,150,170,170,no,Espresso and oat milk with chocolate and macadamia.,Oat mocha with macadamia,mocha-macadamia-oat-coffee.webp,no,yes,yes,16
+caramel-mocha-macadamia-oat-coffee,Caramel Mocha Macadamia Oat Coffee,oat-coffee,drink,Must-Try,,150,170,170,no,"Espresso and oat milk with caramel, chocolate and macadamia.","Caramel, mocha and macadamia",caramel-mocha-macadamia-oat-coffee.webp,no,yes,yes,17
+toasted-vanilla-oat-coffee,Toasted Vanilla Oat Coffee,oat-coffee,drink,Must-Try,,150,170,170,no,Espresso and oat milk with toasted vanilla.,"Oat latte, toasted vanilla",,no,yes,yes,18
+latte,Latte,strong-coffee,drink,,,110,130,130,yes,Espresso and milk. Simple and smooth.,Espresso and milk,latte.webp,no,yes,yes,19
+spanish-latte,Spanish Latte,strong-coffee,drink,Best Seller,,110,130,130,yes,"Espresso and milk, sweetened with condensed milk.",Espresso with condensed milk,spanish-latte.webp,no,yes,yes,20
+vietnamese,Vietnamese,strong-coffee,drink,,,110,120,120,yes,"Strong coffee with sweetened condensed milk, Vietnamese style.","Strong coffee, condensed milk",vietnamese.webp,no,yes,yes,21
+americano,Americano,strong-coffee,drink,,,100,110,110,yes,Espresso with water. Black and strong.,Espresso and water,americano.webp,no,yes,yes,22
+white-americano,White Americano,strong-coffee,drink,,,105,115,115,yes,Espresso and water with a splash of milk.,Americano with milk,white-americano.webp,no,yes,yes,23
+caramel-macchiato,Caramel Macchiato,caramel,drink,Best Seller,,130,140,140,yes,Milk marked with espresso and finished with caramel.,"Milk, espresso, caramel",caramel-macchiato.webp,no,yes,yes,24
+caramel-mocha,Caramel Mocha,caramel,drink,,,135,145,145,yes,"Espresso, milk and chocolate with caramel.",Mocha with caramel,caramel-mocha.webp,no,yes,yes,25
+caramel-mocha-macadamia,Caramel Mocha Macadamia,caramel,drink,Must-Try,,135,145,145,yes,Caramel mocha with macadamia.,"Caramel mocha, macadamia",caramel-mocha-macadamia.webp,no,yes,yes,26
+cloudy-caramel-macchiato,Cloudy Caramel Macchiato,caramel,drink,Must-Try,,140,150,150,yes,Caramel macchiato topped with a soft cloud of cream.,"Caramel macchiato, cream top",cloudy-caramel-macchiato.webp,no,yes,yes,27
+toasted-caramel,Toasted Caramel,caramel,drink,,,135,145,145,yes,Espresso and milk with toasted caramel.,Latte with toasted caramel,toasted-caramel.webp,no,yes,yes,28
+spanish-salted-caramel,Spanish Salted Caramel,caramel,drink,Best Seller,,130,140,140,yes,Spanish latte with salted caramel.,"Sweet latte, salted caramel",spanish-salted-caramel.webp,no,yes,yes,29
+choco-lava,Choco Lava,non-coffee,drink,Kids' Favorite,,120,130,,yes,"A rich, creamy chocolate drink. No coffee.",Rich chocolate drink,choco-lava.webp,no,yes,yes,30
+choco-berry,Choco Berry,non-coffee,drink,Best Seller,,120,130,,yes,Chocolate and berry with milk. No coffee.,Chocolate and berry,choco-berry.webp,no,yes,yes,31
+ube-lava,Ube Lava,non-coffee,drink,,,110,120,,yes,A creamy ube (purple yam) drink. No coffee.,Creamy ube drink,ube-lava.webp,no,yes,yes,32
+milky-ube,Milky Ube,non-coffee,drink,Best Seller,,120,130,,yes,Ube with milk. No coffee.,Ube and milk,milky-ube.webp,no,yes,yes,33
+red-velvet-lava,Red Velvet Lava,non-coffee,drink,Best Seller,,115,125,,yes,A creamy red velvet drink. No coffee.,Creamy red velvet drink,red-velvet-lava.webp,no,yes,yes,34
+blueberry-lava,Blueberry Lava,non-coffee,drink,Best Seller,,115,125,,yes,A creamy blueberry drink. No coffee.,Creamy blueberry drink,blueberry-lava.webp,no,yes,yes,35
+milky-strawberry,Milky Strawberry,non-coffee,drink,,,110,120,,yes,Strawberry with milk. No coffee.,Strawberry and milk,,no,yes,yes,36
+unicorn-drink,Unicorn Drink,non-coffee,drink,Kids' Favorite,,115,125,,yes,A layered pink and blue milk drink. No coffee.,Pink and blue layered milk,,no,yes,yes,37
+avocado-lava,Avocado Lava,non-coffee,drink,,,110,120,,yes,A creamy avocado drink. No coffee.,Creamy avocado drink,,no,yes,yes,38
+milky-biscoff,Milky Biscoff,non-coffee,drink,Kids' Favorite,,150,170,,yes,Milk with Biscoff cookie spread. No coffee.,Milk with Biscoff,,no,yes,yes,39
+choco-lava-oat,Choco Lava Oat,oat-non-coffee,drink,Best Seller,,140,150,,no,Our Choco Lava made with oat milk. No coffee.,Choco Lava with oat milk,choco-lava-oat.webp,no,yes,yes,40
+strawberry-oat,Strawberry Oat,oat-non-coffee,drink,Kids' Favorite,,140,150,,no,Strawberry with oat milk. No coffee.,Strawberry and oat milk,strawberry-oat.webp,no,yes,yes,41
+matcha-macadamia-oat,Matcha Macadamia Oat,oat-non-coffee,drink,Best Seller,,150,160,,no,Matcha and macadamia with oat milk.,"Matcha, macadamia, oat milk",matcha-macadamia-oat.webp,no,yes,yes,42
+matcha-lava,Matcha Lava,matcha,drink,Best Seller,,110,120,,yes,Matcha green tea with milk.,Matcha and milk,matcha-lava.webp,no,yes,yes,43
+spanish-matcha-lava,Spanish Matcha Lava,matcha,drink,,,110,120,,yes,"Matcha and milk, sweetened with condensed milk.","Matcha, condensed milk",spanish-matcha-lava.webp,no,yes,yes,44
+choco-matcha,Choco Matcha,matcha,drink,,,110,120,,yes,Matcha and milk with chocolate.,Matcha and chocolate,choco-matcha.webp,no,yes,yes,45
+straw-matcha,Straw Matcha,matcha,drink,,,110,120,,yes,Matcha and milk with strawberry.,Matcha and strawberry,straw-matcha.webp,no,yes,yes,46
+ube-matcha,Ube Matcha,matcha,drink,,,110,120,,yes,Matcha and milk with ube (purple yam).,Matcha and ube,ube-matcha.webp,no,yes,yes,47
+matcha-macadamia,Matcha Macadamia,matcha,drink,Best Seller,,120,130,,yes,Matcha and milk with macadamia.,Matcha with macadamia,matcha-macadamia.webp,no,yes,yes,48
+ruby-soda,Ruby Soda,soda,drink,Best Seller,,90,100,,no,A bright red sparkling soda.,Red sparkling soda,ruby-soda.webp,no,yes,yes,49
+sapphire-soda,Sapphire Soda,soda,drink,,,90,100,,no,A bright blue sparkling soda.,Blue sparkling soda,sapphire-soda.webp,no,yes,yes,50
+sparkling-pink-milk,Sparkling Pink Milk,soda,drink,,,105,115,,no,Pink milk with sparkling soda.,Pink milk with fizz,,no,yes,yes,51
+sparkling-blue-milk,Sparkling Blue Milk,soda,drink,,,105,115,,no,Blue milk with sparkling soda.,Blue milk with fizz,,no,yes,yes,52
+hot-chocolate,Hot Chocolate,hot-drinks,drink,Best Seller,,,,105,no,Hot chocolate made with milk.,Chocolate and warm milk,hot-chocolate.webp,no,yes,yes,53
+hot-matcha,Hot Matcha,hot-drinks,drink,,,,,110,no,Hot matcha with milk.,Matcha and warm milk,,no,yes,yes,54
+spam,Spam,rice-meals,food,,150,,,,no,Fried Spam with rice and a fried egg. Served as a silog meal.,"Spam, rice and egg",,no,yes,yes,55
+tocino,Tocino,rice-meals,food,,150,,,,no,Sweet cured pork with rice and a fried egg. Served as a silog meal.,"Sweet cured pork, rice, egg",,no,yes,yes,56
+hungarian-sausage,Hungarian Sausage,rice-meals,food,Best Seller,150,,,,no,Hungarian sausage with rice and a fried egg. Served as a silog meal.,"Sausage, rice and egg",hungarian-sausage.webp,no,yes,yes,57
+corned-beef,Corned Beef,rice-meals,food,,140,,,,no,"Corned beef sautéed with onions, with rice and a fried egg. Served as a silog meal.","Corned beef, rice and egg",corned-beef.webp,no,yes,yes,58
+burger-steak,Burger Steak,rice-meals,food,"Best Seller, Must-Try",170,,,,no,"Beef burger steak in gravy, with rice.","Beef patty in gravy, rice",burger-steak.webp,no,yes,yes,59
+porkchop,Porkchop,rice-meals,food,,170,,,,no,Fried porkchop with rice and a fried egg. Served as a silog meal.,"Fried porkchop, rice, egg",porkchop.webp,no,yes,yes,60
+beef-tapa,Beef Tapa,rice-meals,food,Best Seller,180,,,,no,Beef tapa (cured beef) with rice and a fried egg. Served as a silog meal.,"Cured beef, rice and egg",beef-tapa.webp,no,yes,yes,61
+tonkatsu-curry,Tonkatsu Curry,rice-meals,food,"Best Seller, Must-Try",200,,,,no,Breaded pork cutlet with Japanese curry and rice.,"Pork cutlet, curry, rice",tonkatsu-curry.webp,no,yes,yes,62
+carbonara,Carbonara,pastas,food,Best Seller,180,,,,no,"Creamy carbonara, served with garlic bread.","Creamy pasta, garlic bread",carbonara.webp,no,yes,yes,63
+spaghetti-bolognese,Spaghetti Bolognese,pastas,food,Must-Try,190,,,,no,"Spaghetti in a tomato meat sauce with cheese, served with garlic bread.","Meat sauce, garlic bread",spaghetti-bolognese.webp,no,yes,yes,64
+aglio-olio,Aglio Olio,pastas,food,,170,,,,no,"Spaghetti in garlic and olive oil with a slice of lemon, served with garlic bread.",Garlic and olive oil pasta,aglio-olio.webp,no,yes,yes,65
+potato-fries-plain,Potato Fries · Plain,snacks,food,,110,,,,no,"Crispy potato fries, lightly salted.",Crispy salted fries,potato-fries-plain.webp,no,yes,yes,66
+potato-fries-flavored,Potato Fries · Flavored,snacks,food,Kids' Favorite,130,,,,no,"Crispy potato fries in your choice of cheese, BBQ or sour cream.","Cheese, BBQ or sour cream",potato-fries-plain.webp,no,yes,yes,67
+cheese-con-fries,Cheese Con Fries,snacks,food,Must-Try,170,,,,no,Fries topped with cheese sauce and seasoned ground beef.,"Fries, cheese sauce, beef",cheese-con-fries.webp,no,yes,yes,68
+nachos,Nachos,snacks,food,"Best Seller, Kids' Favorite",180,,,,no,Nacho chips with cheese sauce and seasoned ground beef.,"Chips, cheese sauce, beef",nachos.webp,no,yes,yes,69
+chicken-popcorn,Chicken Popcorn,chicken,food,Kids' Favorite,170,,,,no,Crispy bite-size fried chicken with dips.,Bite-size fried chicken,chicken-popcorn.webp,no,yes,yes,70
+chicken-wings-classic,Chicken Wings · Classic,chicken,food,,180,,,,no,Crispy fried chicken wings.,Crispy fried wings,chicken-wings-classic.webp,no,yes,yes,71
+chicken-wings-flavored,Chicken Wings · Flavored,chicken,food,,220,,,,no,"Crispy chicken wings in buttered, garlic parmesan, BBQ, salted egg or honey sriracha.",Wings in your choice of sauce,chicken-wings-classic.webp,no,yes,yes,72

@@ -1,0 +1,104 @@
+.cart-items {
+  display: flex;
+  flex-direction: column;
+}
+
+.empty-cart {
+  flex: 1 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-8);
+  padding: var(--space-24);
+  text-align: center;
+}
+
+.address-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.address-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+}
+
+/* Checkout / Processing — Figma's "Disabled Overlay" is an opaque color/secondary fill that hides
+   the whole screen; a 40% scrim keeps the context visible while the order is placed. */
+.processing-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 20, 20, 0.4);
+  z-index: 5;
+  animation: fade-in 0.15s ease-out;
+}
+.btn--processing:disabled {
+  background: var(--ink);
+  cursor: progress;
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+}
+
+/* Checkout items, listed where they are paid for */
+.checkout-items { padding: 6px 16px 8px; }
+.checkout-items__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 44px;
+}
+.checkout-items__head .link-text { height: 44px; padding: 0 2px; }
+
+/* Order confirmation — the lamp over the counter comes on */
+.confirmation {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+  padding: 8px 16px var(--space-24);
+}
+.confirmation__head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.confirmation__head > div { display: flex; flex-direction: column; gap: 4px; }
+.confirmation__icon {
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-card);
+  background: var(--ink);
+  color: #e9e9e6;
+  --lamp-bg: var(--ink);
+}
+.confirmation__items { padding: 14px 16px 6px; }
+.confirmation__items h2 { margin-bottom: 2px; }
+.confirmation__row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0 8px;
+  color: var(--muted);
+}
+.confirmation__total {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0 8px;
+  border-top: 1.5px solid var(--ink);
+  margin-top: 4px;
+}
+.confirmation__points {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  font-weight: 500;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .processing-scrim { animation: none; }
+}

@@ -1,0 +1,172 @@
+.overlay-root {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.overlay-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 20, 20, 0.55);
+  animation: fade-in 0.15s ease-out;
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+}
+
+/* Bottom sheet */
+.sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: calc(100% - 59px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  padding: var(--space-8) var(--space-16) calc(var(--space-24) + 34px);
+  background: var(--color-surface);
+  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+  box-shadow: var(--elevation-2);
+  outline: none;
+  animation: sheet-up 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes sheet-up {
+  from { transform: translateY(100%); }
+}
+.sheet__handle {
+  display: flex;
+  justify-content: center;
+}
+.sheet__handle span {
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--color-border);
+}
+.sheet__header {
+  display: flex;
+  align-items: center;
+}
+.sheet__header h2 { flex: 1 0 0; min-width: 0; }
+.sheet__close:hover { background: var(--active); }
+.sheet__close {
+  border-radius: var(--radius-button);
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-right: -12px;
+}
+.sheet__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+
+/* Dialog */
+.dialog {
+  position: relative;
+  width: 311px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+  padding: var(--space-24);
+  background: var(--color-surface);
+  border-radius: var(--radius-modal);
+  box-shadow: var(--elevation-3);
+  outline: none;
+  animation: pop 0.18s ease-out;
+}
+@keyframes pop {
+  from { transform: scale(0.96); opacity: 0; }
+}
+.dialog__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+.dialog__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+.dialog__list li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+}
+.dialog__order-pill {
+  align-self: flex-start;
+  padding: 6px 10px;
+  border-radius: var(--radius-badge);
+  background: var(--ink);
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+}
+
+/* O-01 promo modal */
+.dialog--promo {
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+}
+.dialog--promo__hero { position: relative; }
+.dialog--promo__close {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.dialog--promo__close { color: var(--on-dark); }
+.dialog--promo__close::before {
+  content: '';
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-button);
+  background: var(--ink);
+}
+.dialog--promo__close > * { position: relative; }
+.dialog--promo__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  padding: var(--space-16);
+}
+.dialog--promo__body .btn { margin-top: 4px; }
+
+/* O-02 quick add */
+.quick-add-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+}
+.quick-add-row__text {
+  flex: 1 0 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* O-04 promo code row */
+.promo-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-8);
+}
+.promo-row .field { flex: 1 0 0; min-width: 0; }
+.promo-row > .btn { margin-top: 28px; }

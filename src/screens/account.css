@@ -1,0 +1,64 @@
+.splash {
+  justify-content: center;
+}
+.splash__logo { color: var(--gold); display: flex; }
+.welcome__logo { display: flex; margin: 0 0 12px; color: var(--ink); font-size: inherit; line-height: 0; }
+.splash__content {
+  flex: 1 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  padding: var(--space-8) 0 var(--space-24);
+}
+
+.onboarding__content {
+  gap: 14px;
+  padding-top: 0;
+}
+.onboarding__content > .photo { margin-bottom: 10px; }
+.onboarding__skip {
+  position: absolute;
+  right: 16px;
+  top: 62px;
+  border-width: 0 !important;
+}
+
+/* Welcome — the room first, then the name, left-aligned like the lettering on the wall */
+.welcome__content {
+  flex: 1 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px;
+}
+.welcome__content .logo-mark { margin-bottom: 6px; }
+.welcome__tagline { margin-top: -2px; }
+
+.sent-to {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.resend {
+  text-align: left;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+}
+
+.forgot-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.rules {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}

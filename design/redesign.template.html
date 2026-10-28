@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MEGS' Ordering Redesign</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet" />
+<style>
+/* Same tokens as the app (src/index.css): concrete ground, white plates, ink, gold only where a lamp is on. */
+:root {
+  --gold: #cdae54; --gold-ink: #6e5512; --gold-pale: #f3ead0;
+  --ground: #ebebe8; --surface: #ffffff; --raised: #f4f4f2; --active: #e0e0dc;
+  --border: #dcdcd8; --rule: #ececea; --control: #a6a6a1;
+  --ink: #141414; --muted: #545452; --faint: #686865; --on-dark-muted: #b4b4b0;
+  --radius-card: 8px; --radius-control: 6px; --radius-media: 8px;
+  --press: cubic-bezier(0.32, 0.72, 0, 1);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { font-family: 'Archivo', system-ui, sans-serif; color: var(--ink); background: #d6d6d2; -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.num { font-variant-numeric: tabular-nums lining-nums; }
+.icon { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+
+.stage { max-width: 1320px; margin: 0 auto; padding: 48px 24px 72px; }
+.stage__head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 420px); gap: 24px; align-items: end; margin-bottom: 40px; }
+.stage__head h1 { margin: 0; font-size: 32px; line-height: 36px; font-weight: 750; font-stretch: 118%; letter-spacing: -.02em; }
+.stage__head p { margin: 0; font-size: 16px; line-height: 24px; color: var(--muted); }
+.phones { display: grid; grid-template-columns: repeat(3, 390px); justify-content: space-between; gap: 32px; }
+.col { display: flex; flex-direction: column; gap: 12px; }
+.col > h2 { margin: 0; font-size: 18px; font-weight: 700; font-stretch: 110%; }
+.col > p { margin: 0 0 4px; font-size: 15px; line-height: 22px; color: var(--muted); min-height: 44px; }
+
+/* Device: a flat black bezel around the screen; no shadow */
+.device { padding: 10px; border-radius: 52px; background: var(--ink); }
+.screen { position: relative; height: 820px; border-radius: 42px; overflow: clip; background: var(--ground); display: flex; flex-direction: column; }
+.status { height: 48px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 4px 28px 0; font-size: 15px; font-weight: 600; }
+.status i { width: 64px; height: 12px; border-radius: 6px; background: currentColor; }
+.body { flex: 1; overflow: hidden; }
+.dock { flex-shrink: 0; padding: 12px 16px 28px; background: var(--surface); border-top: 1px solid var(--border); }
+
+/* Shared */
+.titlebar { display: flex; align-items: center; gap: 12px; padding: 4px 16px 12px; }
+.titlebar h3 { margin: 0; font-size: 24px; line-height: 28px; font-weight: 700; font-stretch: 115%; letter-spacing: -.015em; flex: 1; }
+.iconbtn { width: 44px; height: 44px; display: grid; place-items: center; border-radius: var(--radius-control); transition: background .3s var(--press); }
+.iconbtn:hover { background: var(--raised); }
+.iconbtn:active { background: var(--active); }
+.mark { width: 32px; height: 32px; border-radius: 50%; background: var(--ink); display: grid; place-items: center; }
+.mark img { width: 23px; height: 23px; }
+.plate { margin: 0 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card); }
+.primary { width: 100%; height: 52px; border-radius: var(--radius-control); background: var(--ink); color: #fff; font-size: 16px; font-weight: 650; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; transition: transform .25s var(--press), background .25s var(--press); }
+.primary:hover { background: #262626; }
+.primary:active { transform: scale(.985); }
+.tag { flex: none; display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 6px; border-radius: 4px; background: var(--gold-pale); color: var(--gold-ink); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.tag svg { width: 11px; height: 11px; fill: var(--gold-ink); }
+
+/* 1 · Menu */
+.tabs { display: flex; gap: 20px; padding: 0 16px; border-bottom: 1px solid var(--border); }
+.tabs button { height: 44px; font-size: 15px; font-weight: 600; color: var(--faint); border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color .3s var(--press), border-color .3s var(--press); }
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink); }
+.chips { display: flex; gap: 8px; padding: 12px 16px; overflow: hidden; }
+.chip { flex: none; height: 36px; padding: 0 14px; border-radius: var(--radius-control); border: 1px solid var(--control); font-size: 14px; font-weight: 600; transition: background .3s var(--press); }
+.chip:hover { background: var(--raised); }
+.chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+.sec { display: flex; justify-content: space-between; align-items: baseline; padding: 6px 16px 10px; }
+.sec h4 { margin: 0; font-size: 18px; font-weight: 700; font-stretch: 110%; }
+.sec span { font-size: 13px; color: var(--faint); }
+.row { width: 100%; display: grid; grid-template-columns: 60px minmax(0, 1fr) auto; gap: 10px; align-items: center; height: 88px; padding: 0 12px 0 10px; text-align: left; transition: background .25s var(--press); }
+.row + .row { border-top: 1px solid var(--rule); }
+.row:hover { background: var(--raised); }
+.ph { width: 60px; height: 60px; border-radius: var(--radius-media); background: var(--raised); overflow: hidden; display: grid; place-items: center; }
+.ph img { width: 100%; height: 100%; object-fit: contain; }
+.row__name { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.row__name b { font-size: 16px; font-weight: 650; font-stretch: 92%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row__blurb { display: block; margin-top: 3px; font-size: 14px; line-height: 19px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row__tag { margin-top: 5px; }
+.row__price { text-align: right; }
+.row__price b { display: block; font-size: 16px; font-weight: 700; }
+.row__price small { font-size: 12px; color: var(--faint); }
+.cartbar { width: 100%; height: 56px; border-radius: var(--radius-control); background: var(--ink); color: #fff; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; padding: 0 16px 0 8px; text-align: left; }
+.cartbar__n { width: 40px; height: 40px; border-radius: 4px; background: #262626; color: var(--gold); display: grid; place-items: center; font-weight: 700; }
+.cartbar__t b { display: block; font-size: 15px; }
+.cartbar__t small { font-size: 12px; color: var(--on-dark-muted); }
+
+/* 2 · Product */
+.hero { margin: 0 16px; height: 248px; border-radius: var(--radius-card); background: var(--surface); border: 1px solid var(--border); display: grid; place-items: center; position: relative; }
+.hero img { height: 224px; width: auto; }
+.hero__ctl { position: absolute; top: 8px; left: 8px; right: 8px; display: flex; justify-content: space-between; }
+.intro { padding: 14px 16px 0; }
+.intro h3 { margin: 8px 0 6px; font-size: 26px; line-height: 30px; font-weight: 750; font-stretch: 116%; letter-spacing: -.02em; }
+.intro p { margin: 0; font-size: 15px; line-height: 22px; color: var(--muted); }
+.grp { margin: 16px 16px 0; }
+.grp__h { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+.grp__h h4 { margin: 0; font-size: 15px; font-weight: 700; }
+.grp__h span { font-size: 13px; color: var(--faint); }
+.opts { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card); }
+.opt { width: 100%; height: 48px; display: grid; grid-template-columns: 22px 1fr auto; gap: 12px; align-items: center; padding: 0 14px; text-align: left; font-size: 15px; }
+.opt + .opt { border-top: 1px solid var(--rule); }
+.opt .dot { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--control); transition: border .25s var(--press), background .25s var(--press); }
+.opt[aria-checked="true"] .dot { border: 6px solid var(--ink); background: var(--gold); }
+.opt[aria-checked="true"] { font-weight: 650; }
+.opt em { font-style: normal; font-weight: 650; }
+.opt small { font-size: 14px; color: var(--muted); font-weight: 500; }
+.buy { display: grid; grid-template-columns: auto 1fr; gap: 10px; }
+.qty { display: grid; grid-template-columns: 44px 32px 44px; align-items: center; height: 52px; padding: 0 3px; border: 1px solid var(--control); border-radius: var(--radius-control); }
+.qty button { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 4px; }
+.qty button:hover { background: var(--raised); }
+.qty button:active { background: var(--active); }
+.qty output { text-align: center; font-weight: 700; font-size: 17px; }
+
+/* 3 · Order */
+.pickup { display: grid; grid-template-columns: 40px 1fr auto; gap: 12px; align-items: center; padding: 10px 14px; }
+.lamp { width: 40px; height: 40px; border-radius: 6px; background: var(--ink); display: grid; place-items: center; }
+.pickup b { display: block; font-size: 15px; }
+.pickup small { font-size: 13px; color: var(--muted); }
+.link { font-size: 14px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; height: 44px; padding: 0 2px; }
+.line { display: grid; grid-template-columns: 56px 1fr; gap: 12px; padding: 14px; }
+.line + .line { border-top: 1px solid var(--rule); }
+.line .ph { width: 56px; height: 56px; }
+.line__top { display: flex; justify-content: space-between; gap: 8px; font-size: 15px; }
+.line__top b { font-weight: 650; }
+.line__top span { font-weight: 700; }
+.line__opts { margin-top: 2px; font-size: 14px; color: var(--muted); }
+.line__ctl { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+.line .qty { height: 44px; grid-template-columns: 40px 28px 40px; padding: 0 1px; }
+.line .qty button { width: 40px; height: 40px; }
+.receipt { padding: 10px 14px; font-size: 15px; }
+.receipt div { display: flex; justify-content: space-between; padding: 5px 0; }
+.receipt .save span:last-child { color: var(--gold-ink); font-weight: 600; }
+.receipt .total { margin-top: 6px; padding-top: 12px; border-top: 1.5px solid var(--ink); font-size: 18px; font-weight: 750; }
+
+.notes { margin-top: 48px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; }
+.notes h2 { margin: 0 0 10px; font-size: 18px; font-weight: 700; font-stretch: 110%; }
+.notes ul { margin: 0; padding-left: 18px; font-size: 16px; line-height: 24px; }
+.notes li + li { margin-top: 6px; }
+.notes .src { grid-column: 1 / -1; font-size: 14px; color: var(--muted); margin: 0; }
+.notes .src a { color: var(--ink); }
+
+@media (max-width: 1300px) { .stage__head { grid-template-columns: 1fr; } .phones { grid-template-columns: repeat(auto-fit, 390px); justify-content: center; } .notes { grid-template-columns: 1fr; } }
+@media (max-width: 767px) {
+  .stage { padding: 32px 16px 48px; }
+  .stage__head { grid-template-columns: 1fr; }
+  .stage__head h1 { font-size: 26px; line-height: 30px; }
+  .phones { grid-template-columns: minmax(0, 390px); }
+  .device { padding: 8px; border-radius: 48px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<main class="stage">
+  <header class="stage__head">
+    <h1>MEGS' ordering, redesigned</h1>
+    <p>Three screens on the path from menu to pickup. Same type, palette and photos as the app; every price is from the printed menu boards.</p>
+  </header>
+
+  <div class="phones">
+    <section class="col" aria-labelledby="t1">
+      <h2 id="t1">Browse the menu</h2>
+      <p>Coffee, Non-Coffee and Food first, then that group's boards. Each drink appears once.</p>
+      <div class="device" data-ui><div class="screen">
+        <div class="status"><span>9:41</span><i></i></div>
+        <div class="body">
+          <div class="titlebar">
+            <span class="mark"><img src="{{mark}}" alt="" /></span>
+            <h3>Menu</h3>
+            <button class="iconbtn" aria-label="Search the menu"><svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button>
+          </div>
+          <div class="tabs" role="tablist" aria-label="Menu group">
+            <button role="tab" aria-selected="true">Coffee</button>
+            <button role="tab" aria-selected="false">Non-Coffee</button>
+            <button role="tab" aria-selected="false">Food</button>
+          </div>
+          <div class="chips" data-chips>
+            <button class="chip" aria-pressed="false">Espresso</button>
+            <button class="chip" aria-pressed="false">Oat</button>
+            <button class="chip" aria-pressed="false">Strong</button>
+            <button class="chip" aria-pressed="true">Caramel</button>
+          </div>
+          <div class="sec"><h4>Caramel Series</h4><span>6 drinks · cold or hot</span></div>
+          <div class="plate">
+            <button class="row"><span class="ph"><img src="{{img:caramel-macchiato}}" alt="" /></span>
+              <span><span class="row__name"><b>Caramel Macchiato</b></span><span class="row__blurb">Milk, espresso, caramel</span><span class="tag row__tag">{{star}}Best Seller</span></span>
+              <span class="row__price num"><b>₱130</b><small>to ₱140</small></span></button>
+            <button class="row"><span class="ph"><img src="{{img:spanish-salted-caramel}}" alt="" /></span>
+              <span><span class="row__name"><b>Spanish Salted Caramel</b></span><span class="row__blurb">Sweet latte, salted caramel</span></span>
+              <span class="row__price num"><b>₱130</b><small>to ₱140</small></span></button>
+            <button class="row"><span class="ph"><img src="{{img:cloudy-caramel-macchiato}}" alt="" /></span>
+              <span><span class="row__name"><b>Cloudy Caramel Macchiato</b></span><span class="row__blurb">Caramel macchiato, cream top</span></span>
+              <span class="row__price num"><b>₱140</b><small>to ₱150</small></span></button>
+            <button class="row"><span class="ph"><img src="{{img:caramel-mocha}}" alt="" /></span>
+              <span><span class="row__name"><b>Caramel Mocha</b></span><span class="row__blurb">Mocha with caramel</span></span>
+              <span class="row__price num"><b>₱135</b><small>to ₱145</small></span></button>
+            <button class="row"><span class="ph"><img src="{{img:toasted-caramel}}" alt="" /></span>
+              <span><span class="row__name"><b>Toasted Caramel</b></span><span class="row__blurb">Latte with toasted caramel</span></span>
+              <span class="row__price num"><b>₱135</b><small>to ₱145</small></span></button>
+          </div>
+        </div>
+        <div class="dock">
+          <button class="cartbar"><span class="cartbar__n num">2</span><span class="cartbar__t"><b>View your order</b><small>Pickup · ready in about 10 min</small></span><b class="num" data-bar-total>₱320</b></button>
+        </div>
+      </div></div>
+    </section>
+
+    <section class="col" aria-labelledby="t2">
+      <h2 id="t2">Choose the drink</h2>
+      <p>Each size shows its board price, so there is no adding up. The total updates as you choose.</p>
+      <div class="device" data-ui><div class="screen" data-pdp>
+        <div class="status"><span>9:41</span><i></i></div>
+        <div class="body">
+          <div class="hero">
+            <img src="{{img:caramel-macchiato}}" alt="Caramel Macchiato in a MEGS' cup" />
+            <div class="hero__ctl">
+              <button class="iconbtn" aria-label="Back"><svg class="icon" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+              <button class="iconbtn" aria-label="Save to favourites"><svg class="icon" viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></button>
+            </div>
+          </div>
+          <div class="intro">
+            <span class="tag">{{star}}Best Seller</span>
+            <h3>Caramel Macchiato</h3>
+            <p>Milk marked with espresso and finished with caramel.</p>
+          </div>
+          <div class="grp">
+            <div class="grp__h"><h4>Size</h4><span>Required</span></div>
+            <div class="opts" role="radiogroup" aria-label="Size" data-size>
+              <button class="opt" role="radio" aria-checked="true" data-price="130"><span class="dot"></span>Cold · 16 oz<em class="num">₱130</em></button>
+              <button class="opt" role="radio" aria-checked="false" data-price="140"><span class="dot"></span>Cold · 22 oz<em class="num">₱140</em></button>
+              <button class="opt" role="radio" aria-checked="false" data-price="140"><span class="dot"></span>Hot · 12 oz<em class="num">₱140</em></button>
+            </div>
+          </div>
+          <div class="grp">
+            <div class="grp__h"><h4>Milk</h4><span>Optional</span></div>
+            <div class="opts" role="radiogroup" aria-label="Milk" data-milk>
+              <button class="opt" role="radio" aria-checked="true" data-add="0"><span class="dot"></span>Regular milk<small></small></button>
+              <button class="opt" role="radio" aria-checked="false" data-add="50"><span class="dot"></span>Oat milk<small class="num">+₱50</small></button>
+            </div>
+          </div>
+        </div>
+        <div class="dock">
+          <div class="buy">
+            <div class="qty"><button aria-label="Remove one" data-q="-1"><svg class="icon" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button><output class="num" data-qv>1</output><button aria-label="Add one" data-q="1"><svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button></div>
+            <button class="primary" data-add-btn><span data-add-label>Add to order</span><span class="num" data-total>₱130</span></button>
+          </div>
+        </div>
+      </div></div>
+    </section>
+
+    <section class="col" aria-labelledby="t3">
+      <h2 id="t3">Check and pay</h2>
+      <p>Pickup and its ready time first, then each item with its photo, then one total and one action.</p>
+      <div class="device" data-ui><div class="screen" data-cart>
+        <div class="status"><span>9:41</span><i></i></div>
+        <div class="body">
+          <div class="titlebar">
+            <button class="iconbtn" aria-label="Back"><svg class="icon" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+            <h3>Your order</h3>
+          </div>
+          <div class="plate pickup">
+            <span class="lamp">{{lamp}}</span>
+            <span><b>Pickup at the counter</b><small>Ready in about 10 min</small></span>
+            <button class="link">Change</button>
+          </div>
+          <div class="plate" style="margin-top:12px" data-lines></div>
+          <div class="plate receipt num" style="margin-top:12px">
+            <div><span>Subtotal</span><span data-sub></span></div>
+            <div class="save"><span>Regular discount 5%</span><span data-disc></span></div>
+            <div class="total"><span>Total</span><span data-tot></span></div>
+          </div>
+        </div>
+        <div class="dock">
+          <button class="primary"><span>Place order</span><span class="num" data-tot2></span></button>
+        </div>
+      </div></div>
+    </section>
+  </div>
+
+  <section class="notes" aria-label="What changed and why">
+    <div><h2>Menu</h2><ul>
+      <li>Three menu groups, then that group's boards. The 16-tab strip, and the 116 rows that listed 72 items, are gone.</li>
+      <li>The whole row is one button. The “+” that opened the product page anyway is removed, and so is the button nested inside a button.</li>
+      <li>Every row shows its price range (“₱130 to ₱140”), so a ₱130 row never becomes ₱140 without warning.</li>
+      <li>Best Seller is a small pale tag on its own line, so the name and description keep their full width and every row stays one height.</li>
+    </ul></div>
+    <div><h2>Choose</h2><ul>
+      <li>The photo sits on a white plate at full height, not in a dark box that was mostly empty.</li>
+      <li>Sizes list the board's own prices (₱130 · ₱140 · ₱140) instead of “+₱10” differences, with every size visible at once, the fix a Starbucks app study arrived at.</li>
+      <li>Quantity and the live total share one bar with 44px buttons, following Baymard's quantity-selector research.</li>
+      <li>No star ratings or reviews: the café has none to show. The honest signal is its own Best Seller mark.</li>
+    </ul></div>
+    <div><h2>Pay</h2><ul>
+      <li>Pickup and its ready time lead, as in Sweetgreen's ordering flow, with the lit lamp from the app's tracker.</li>
+      <li>Every line has its photo, its options and a 44px stepper. Totals are computed from the lines.</li>
+      <li>One primary action carries the total, so the price is never off screen.</li>
+    </ul></div>
+    <p class="src">References: <a href="https://uxdesign.cc/a-usability-test-on-the-starbucks-ios-app-2b6fb1cb8241">Starbucks app usability test</a> · <a href="https://baymard.com/guidelines/2151-cart-quantity-selector-design">Baymard, quantity selector design</a> · <a href="https://uxdesign.cc/the-ux-of-sweetgreen-68696b16a66">The UX of Sweetgreen</a></p>
+  </section>
+</main>
+
+<script>
+const peso = (n) => '₱' + n.toLocaleString('en-PH')
+
+/* The order is one dataset; every total on the page is computed from it */
+const lines = [
+  { name: 'Caramel Macchiato', opts: 'Cold 22 oz · Regular milk', unit: 140, qty: 1, img: '{{img:caramel-macchiato}}' },
+  { name: 'Carbonara', opts: 'Served with garlic bread', unit: 180, qty: 1, img: '{{img:carbonara}}' },
+]
+const cart = document.querySelector('[data-cart]')
+const box = cart.querySelector('[data-lines]')
+const stepper = (i, q) => `<div class="qty"><button aria-label="Remove one" data-step="${i}:-1"><svg class="icon" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button><output class="num">${q}</output><button aria-label="Add one" data-step="${i}:1"><svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button></div>`
+const drawCart = () => {
+  box.innerHTML = lines.map((l, i) => `<div class="line"><span class="ph"><img src="${l.img}" alt="" /></span><div>
+    <div class="line__top"><b>${l.name}</b><span class="num">${peso(l.unit * l.qty)}</span></div>
+    <div class="line__opts">${l.opts}</div>
+    <div class="line__ctl">${stepper(i, l.qty)}<button class="link">Edit</button></div></div></div>`).join('')
+  const sub = lines.reduce((s, l) => s + l.unit * l.qty, 0)
+  const disc = Math.round(sub * 0.05)
+  console.assert(sub === 320 || lines.some((l) => l.qty > 1), 'demo subtotal should be 320')
+  cart.querySelector('[data-sub]').textContent = peso(sub)
+  cart.querySelector('[data-disc]').textContent = '−' + peso(disc)
+  cart.querySelector('[data-tot]').textContent = peso(sub - disc)
+  cart.querySelector('[data-tot2]').textContent = peso(sub - disc)
+  document.querySelector('.cartbar__n').textContent = lines.reduce((s, l) => s + l.qty, 0)
+  document.querySelector('[data-bar-total]').textContent = peso(sub)
+}
+box.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-step]'); if (!b) return
+  const [i, d] = b.dataset.step.split(':').map(Number)
+  lines[i].qty = Math.max(1, lines[i].qty + d); drawCart()
+})
+drawCart()
+
+/* The product: size, milk and quantity drive one live total */
+const pdp = document.querySelector('[data-pdp]')
+let size = 130, milk = 0, qty = 1
+const drawPdp = () => {
+  pdp.querySelector('[data-qv]').textContent = qty
+  pdp.querySelector('[data-total]').textContent = peso((size + milk) * qty)
+}
+const radio = (group, set) => group.querySelectorAll('.opt').forEach((o) => o.addEventListener('click', () => {
+  group.querySelectorAll('.opt').forEach((x) => x.setAttribute('aria-checked', 'false'))
+  o.setAttribute('aria-checked', 'true'); set(o); drawPdp()
+}))
+radio(pdp.querySelector('[data-size]'), (o) => (size = +o.dataset.price))
+radio(pdp.querySelector('[data-milk]'), (o) => (milk = +o.dataset.add))
+pdp.querySelectorAll('[data-q]').forEach((b) => b.addEventListener('click', () => { qty = Math.max(1, qty + +b.dataset.q); drawPdp() }))
+pdp.querySelector('[data-add-btn]').addEventListener('click', () => {
+  const l = pdp.querySelector('[data-add-label]')
+  l.textContent = 'Added'; setTimeout(() => (l.textContent = 'Add to order'), 1200)
+})
+drawPdp()
+
+document.querySelectorAll('[data-chips] .chip').forEach((c) => c.addEventListener('click', () => {
+  document.querySelectorAll('[data-chips] .chip').forEach((x) => x.setAttribute('aria-pressed', 'false'))
+  c.setAttribute('aria-pressed', 'true')
+}))
+</script>
+</body>
+</html>

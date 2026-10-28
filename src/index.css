@@ -1,0 +1,152 @@
+/* MEGS' Cafe — "Concrete & lamplight".
+   The chrome is the cafe's room: trowelled concrete ground, white plates, black steel ink.
+   Gold is lamplight and appears only where a lamp is on: the live order, the lit tracker
+   step, the points you have earned, the selected option, the mark. Never on chrome.
+   Style: achromatic ledger (taste-skill, seed 1634987066), brand palette kept. */
+:root {
+  /* Lamplight */
+  --gold: #cdae54;
+  --gold-ink: #6e5512;          /* gold as text on light, 6.6:1 on white */
+  --gold-pale: #f3ead0;         /* the Best Seller tag: a pale tint with gold-ink text */
+
+  /* The room */
+  --ground: #ebebe8;            /* concrete wall, low chroma */
+  --surface: #ffffff;           /* plates and panels */
+  --raised: #f4f4f2;            /* a step up inside a panel */
+  --active: #e0e0dc;            /* pressed / selected neutral */
+  --border: #dcdcd8;            /* panel edge on white, ~1.3:1 */
+  --rule: #ececea;              /* row rules */
+  --control: #a6a6a1;           /* input and outline-control edge */
+  --ink: #141414;               /* black ceiling and steel */
+  --steel: #262626;             /* hover on ink */
+  --muted: #545452;             /* secondary text, 6.9:1 on ground */
+  --faint: #686865;             /* meta and placeholders, 4.9:1 on white */
+  --on-dark: #ffffff;
+  --on-dark-muted: #b4b4b0;     /* 9:1 on ink */
+  --dark-rule: #333331;
+
+  --negative: #b3322a;
+  --pill-negative-bg: #fbe9e7;
+  --pill-negative-ink: #7d1f19;
+  --positive: #2a6f49;
+
+  /* Legacy names used across components, mapped onto the roles above */
+  --color-primary: var(--gold);
+  --color-primary-text: var(--ink);
+  --color-on-primary: var(--ink);
+  --color-secondary: var(--ink);
+  --color-text: var(--ink);
+  --color-text-muted: var(--muted);
+  --color-background: var(--ground);
+  --color-surface: var(--surface);
+  --color-surface-alt: var(--raised);
+  --color-border: var(--border);
+  --color-border-input: var(--control);
+  --color-on-dark: var(--on-dark);
+  --color-success: var(--positive);
+  --color-info: var(--ink);
+  --color-discount: var(--ink);
+  --color-warning: var(--ink);
+  --color-danger: var(--negative);
+  --color-error: var(--negative);
+
+  --space-4: 4px;
+  --space-8: 8px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-24: 24px;
+  --space-32: 32px;
+
+  /* Tight, industrial corners: plates 6, controls 4 */
+  --radius-button: 4px;
+  --radius-input: 4px;
+  --radius-card: 6px;
+  --radius-image: 4px;
+  --radius-chip: 4px;
+  --radius-badge: 4px;
+  --radius-modal: 6px;
+  --radius-sheet: 10px;
+
+  /* Only what truly floats casts a shadow */
+  --elevation-1: none;
+  --elevation-2: 0 -6px 24px rgba(20, 20, 20, 0.14);
+  --elevation-3: 0 12px 32px rgba(20, 20, 20, 0.18);
+
+  --font: 'Archivo', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font);
+  font-variation-settings: 'wdth' 100;
+  color: var(--ink);
+  background: #d6d6d2;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+p,
+h1,
+h2,
+h3 {
+  margin: 0;
+}
+
+.icon { display: block; flex-shrink: 0; }
+
+/* Type. One family, Archivo. Titles take the semi-expanded width of the cafe's wall lettering. */
+.t-display {
+  font-size: 28px;
+  line-height: 32px;
+  font-weight: 700;
+  font-stretch: 118%;
+  letter-spacing: -0.02em;
+}
+.t-h1 {
+  font-size: 24px;
+  line-height: 28px;
+  font-weight: 700;
+  font-stretch: 115%;
+  letter-spacing: -0.015em;
+}
+.t-h2 { font-size: 19px; line-height: 24px; font-weight: 650; font-stretch: 110%; letter-spacing: -0.01em; }
+.t-h3 { font-size: 16px; line-height: 22px; font-weight: 600; }
+.t-body { font-size: 15px; line-height: 22px; font-weight: 400; }
+.t-body-sm { font-size: 14px; line-height: 20px; font-weight: 400; }
+.t-caption { font-size: 12px; line-height: 16px; font-weight: 500; }
+.t-button { font-size: 15px; line-height: 20px; font-weight: 600; }
+.t-price { font-size: 15px; line-height: 22px; font-weight: 600; font-variant-numeric: tabular-nums lining-nums; }
+.num { font-variant-numeric: tabular-nums lining-nums; }
+.muted { color: var(--muted); }
+.link-text {
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+}

@@ -1,0 +1,21 @@
+﻿group,label,price_add,price_from,badge,is_default,is_available,sort_order
+size,Cold · 16 oz,,price_cold_16oz,,yes,yes,1
+size,Cold · 22 oz,,price_cold_22oz,,no,yes,2
+size,Hot · 12 oz,,price_hot_12oz,,no,yes,3
+milk,Regular milk,0,,,yes,yes,1
+milk,Oat milk,50,,,no,yes,2
+add-ons,Espresso shot,30,,,no,yes,1
+add-ons,Syrup,20,,,no,yes,2
+add-ons,Sauce,20,,,no,yes,3
+fries-flavor,Cheese,0,,,yes,yes,1
+fries-flavor,BBQ,0,,,no,yes,2
+fries-flavor,Sour Cream,0,,,no,yes,3
+wings-flavor,Buttered,0,,Best Seller,yes,yes,1
+wings-flavor,Garlic Parmesan,0,,Best Seller,no,yes,2
+wings-flavor,BBQ,0,,,no,yes,3
+wings-flavor,Salted Egg,0,,,no,yes,4
+wings-flavor,Honey Sriracha,0,,Must-Try,no,yes,5
+rice-meal-add-ons,Rice,30,,,no,yes,1
+rice-meal-add-ons,Egg,25,,,no,yes,2
+snack-add-ons,Mayonnaise,15,,,no,yes,1
+snack-add-ons,Cheese Sauce,20,,,no,yes,2

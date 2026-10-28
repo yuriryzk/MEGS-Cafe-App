@@ -1,0 +1,17 @@
+﻿id,title,menu_group,kind,sort_order
+espresso,Espresso,Coffee,board,1
+oat-coffee,Oat Series · Coffee,Coffee,board,2
+strong-coffee,Strong Coffee,Coffee,board,3
+caramel,Caramel Series,Coffee,board,4
+non-coffee,Non-Coffee,Non-Coffee,board,5
+oat-non-coffee,Oat Series · Non-Coffee,Non-Coffee,board,6
+matcha,Matcha Series,Non-Coffee,board,7
+soda,Soda-Based,Non-Coffee,board,8
+hot-drinks,Hot Drinks,Non-Coffee,board,9
+rice-meals,Rice Meals,Food,board,10
+pastas,Pastas,Food,board,11
+snacks,Snacks,Food,board,12
+chicken,Chicken Delights,Food,board,13
+best-sellers,Best Sellers,,collection: badge includes Best Seller,14
+must-try,Must-Try,,collection: badge includes Must-Try,15
+kids-favorites,Kids' Favorites,,collection: badge includes Kids' Favorite,16

@@ -1,0 +1,166 @@
+.identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-16);
+}
+.avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 32px;
+  background: var(--color-secondary);
+  color: var(--color-on-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.identity__name {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+.tier-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  height: 24px;
+  padding: 0 var(--space-8);
+  border-radius: var(--radius-badge);
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+}
+
+.option-row--danger { color: var(--color-error); }
+
+.guest-profile {
+  flex: 1 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-8);
+  padding: var(--space-24) var(--space-16);
+  text-align: center;
+}
+.guest-profile .btn:first-of-type { margin-top: var(--space-8); }
+
+/* Read-only field (verified mobile number) */
+.field__input:has(.is-readonly) { background: var(--color-surface-alt); }
+
+/* Toast */
+.toast {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: 67px;
+  z-index: 10;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  padding: var(--space-12) var(--space-16);
+  background: var(--ink);
+  color: var(--on-dark);
+  border-left: 3px solid var(--gold);
+  border-radius: var(--radius-input);
+  box-shadow: var(--elevation-3);
+  animation: toast-in 0.2s ease-out;
+}
+@keyframes toast-in {
+  from { transform: translateY(-8px); opacity: 0; }
+}
+
+/* Toggle */
+.toggles-card {
+  padding: var(--space-4) var(--space-16);
+  display: flex;
+  flex-direction: column;
+}
+.toggle {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  cursor: pointer;
+}
+.toggle input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.toggle__text {
+  flex: 1 0 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  white-space: nowrap;
+}
+.toggle__track {
+  width: 52px;
+  height: 32px;
+  border-radius: 16px;
+  padding: var(--space-4);
+  background: var(--color-border-input);
+  display: flex;
+  justify-content: flex-start;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.toggle__track.is-on {
+  background: var(--ink);
+  justify-content: flex-end;
+}
+.toggle__track span {
+  width: 24px;
+  height: 24px;
+  border-radius: 12px;
+  background: var(--color-surface);
+}
+.toggle input:focus-visible + .toggle__track {
+  outline: 2px solid var(--color-primary-text);
+  outline-offset: 2px;
+}
+
+/* Notifications */
+.notes-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+}
+.notes-card {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+/* Figma gives list items no side padding (the unread dot touches the card edge); 12px keeps it inside. */
+.note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-12);
+  padding: var(--space-12);
+  text-align: left;
+  width: 100%;
+}
+.note__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 5px;
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+.note__dot.is-unread { background: var(--gold); box-shadow: 0 0 0 2px var(--surface), 0 0 0 3px var(--gold-ink); }
+.note__text {
+  flex: 1 0 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.note__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+}
+.note__head > :first-child { flex: 1 0 0; min-width: 0; }
+.note__unread { color: var(--gold-ink); font-weight: 600; }

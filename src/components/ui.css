@@ -1,0 +1,220 @@
+/* Buttons — flat, 4px corners. The primary is the cafe's black steel; gold is never a button. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-8);
+  padding: 0 var(--space-16);
+  border-radius: var(--radius-button);
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background-color 0.15s, color 0.15s, transform 0.1s;
+}
+.btn:active:not(:disabled) { transform: translateY(1px); }
+.btn--full { width: 100%; }
+/* Label on the left, the total on the right (Add to order · Checkout · Place order) */
+.btn--split { padding: 0 18px; }
+.btn--split > .t-button { flex: 1; display: flex; justify-content: space-between; }
+.btn--primary {
+  background: var(--ink);
+  color: var(--on-dark);
+}
+.btn--primary:hover:not(:disabled) { background: var(--steel); }
+.btn--secondary {
+  border: 1.5px solid var(--ink);
+  color: var(--ink);
+  background: var(--surface);
+}
+.btn--secondary:hover:not(:disabled) { background: var(--raised); }
+.btn--danger {
+  background: var(--negative);
+  color: var(--on-dark);
+}
+.btn--danger-outline {
+  border: 1.5px solid var(--negative);
+  color: var(--negative);
+  background: var(--surface);
+}
+.btn--danger-outline:hover:not(:disabled) { background: var(--pill-negative-bg); }
+.btn--text,
+.btn--text-small {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 4px;
+}
+.btn--text:hover:not(:disabled),
+.btn--text-small:hover:not(:disabled) { background: var(--active); }
+.btn:disabled {
+  cursor: not-allowed;
+  background: var(--active);
+  border-color: transparent;
+  color: var(--faint);
+}
+.btn--text:disabled { background: none; }
+.btn:focus-visible,
+.field__input:focus-within,
+.otp__digit:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* Text field */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+.field > label { font-weight: 500; }
+.field__input {
+  height: 52px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  padding: 0 14px;
+  background: var(--surface);
+  border: 1px solid var(--control);
+  border-radius: var(--radius-input);
+}
+.field__input input {
+  flex: 1 0 0;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  padding: 0;
+}
+.field__input input::placeholder { color: var(--faint); }
+.field--error .field__input { border: 1.5px solid var(--negative); }
+.field__error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  color: var(--negative);
+}
+
+/* Checkbox — square, ink when on */
+.checkbox {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  min-height: 48px;
+  cursor: pointer;
+}
+.checkbox input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.checkbox__box {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--control);
+  border-radius: 3px;
+  background: var(--surface);
+}
+.checkbox__box.is-checked {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+.checkbox input:focus-visible + .checkbox__box {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+.checkbox__label { flex: 1 0 0; min-width: 0; }
+
+/* OTP */
+.otp {
+  display: flex;
+  gap: var(--space-8);
+}
+.otp__digit {
+  width: 46px;
+  height: 56px;
+  text-align: center;
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  background: var(--surface);
+  border: 1px solid var(--control);
+  border-radius: var(--radius-input);
+}
+
+/* Pagination — a run of short steel bars; the current one is lit */
+.dots {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.dots span {
+  width: 16px;
+  height: 3px;
+  background: var(--control);
+  transition: width 0.2s, background-color 0.2s;
+}
+.dots span.is-active {
+  width: 32px;
+  background: var(--ink);
+}
+
+/* Logo. The artwork is used as a mask so its colour comes from CSS. */
+.logo-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--ink);
+}
+.logo-mark__art,
+.logo {
+  display: block;
+  flex-shrink: 0;
+  -webkit-mask: var(--logo) center / contain no-repeat;
+  mask: var(--logo) center / contain no-repeat;
+}
+.logo-mark__art {
+  width: 74%;
+  height: 74%;
+  margin-top: 4%;
+  background: var(--gold);
+}
+.logo { background: currentColor; }
+
+/* Loader */
+.loader {
+  display: block;
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Rule check */
+.rule {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  min-height: 32px;
+}
+.rule__done { color: var(--ink); font-weight: 600; }
+
+/* Photographs */
+.photo {
+  background: var(--raised);
+  flex-shrink: 0;
+  display: block;
+}
+.photo--real { background: var(--ink); }
+
+@media (prefers-reduced-motion: reduce) {
+  .loader { animation-duration: 2.4s; }
+  .btn { transition: none; }
+}

@@ -1,0 +1,419 @@
+/* Fulfillment badge — steel, white label (Figma's label matched its fill and was unreadable) */
+.fulfillment-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: var(--radius-badge);
+  background: var(--active);
+  color: var(--ink);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.fulfillment-badge--L { height: 30px; padding: 0 10px; }
+
+/* Fulfillment summary */
+.fulfillment-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px 10px 10px;
+  min-height: 64px;
+  text-align: left;
+}
+/* Pickup shows the cafe's lit wall lamp, as on the order tracker */
+.fulfillment-summary__lamp {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: var(--radius-button);
+  background: var(--ink);
+  color: #e9e9e6;
+  display: grid;
+  place-items: center;
+  --lamp-bg: var(--ink);
+}
+.fulfillment-summary:not(:disabled):hover { border-color: var(--control); }
+.fulfillment-summary:disabled { cursor: default; color: inherit; }
+.fulfillment-summary__body {
+  flex: 1 0 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.fulfillment-summary__eta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-weight: 500;
+}
+
+/* Fulfillment details */
+.fulfillment-details {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+}
+.fulfillment-details__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.fulfillment-details__status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.fulfillment-details__status--accent .icon { color: var(--gold-ink); }
+.fulfillment-details__location {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.fulfillment-details__location-text {
+  display: flex;
+  flex-direction: column;
+}
+.fulfillment-details__recipient {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.fulfillment-details__note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+/* Ready for pickup: the order number, big, on a black plate with the gold numerals */
+.fulfillment-details__number {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--radius-input);
+  background: var(--ink);
+  color: var(--on-dark-muted);
+}
+.fulfillment-details__number-value {
+  font-size: 30px;
+  line-height: 34px;
+  font-weight: 700;
+  font-stretch: 118%;
+  color: var(--gold);
+}
+
+/* Fulfillment selector */
+.fulfillment-selector {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+.fulfillment-seg {
+  flex: 1 0 0;
+  min-width: 0;
+  min-height: 84px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  text-align: left;
+  transition: background-color 0.15s;
+}
+.fulfillment-seg:hover:not(.is-selected) { border-color: var(--control); }
+.fulfillment-seg.is-selected {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--on-dark);
+}
+.fulfillment-seg__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+.fulfillment-seg__head .t-h3 { flex: 1 0 0; }
+.fulfillment-seg__eta { color: var(--muted); }
+.fulfillment-seg.is-selected .fulfillment-seg__eta { color: var(--on-dark-muted); }
+
+/* Address card */
+.address-card {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+}
+.address-card.is-selected { box-shadow: inset 0 0 0 1.5px var(--ink); border-color: var(--ink); }
+.address-card__hit {
+  flex: 1 0 0;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  text-align: left;
+}
+.address-card__hit .radio__ring { margin-top: 1px; }
+.address-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.address-card__tags {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+.address-card__edit {
+  position: absolute;
+  right: 16px;
+  top: 16px;
+}
+
+/* Cart item — lines on the order slip */
+.cart-items {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 0 16px;
+}
+.cart-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 0;
+}
+.cart-item + .cart-item { border-top: 1px solid var(--rule); }
+.cart-item__body {
+  flex: 1 0 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.cart-item__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.cart-item__controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+.cart-item__edit { height: 44px; padding: 0 2px; }
+
+/* Price rows — the receipt */
+.price-breakdown {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 8px 16px;
+}
+.price-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+}
+.price-row--total {
+  margin-top: 6px;
+  padding-top: 12px;
+  border-top: 1.5px solid var(--ink);
+}
+.discount-row__left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.discount-row__tag {
+  padding: 1px 6px;
+  border-radius: var(--radius-badge);
+  background: var(--gold-pale);
+  color: var(--gold-ink);
+  font-weight: 600;
+}
+
+/* Alert — Figma fills it solid with the tone; a quiet plate with the tone on the edge reads instead */
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius-input);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--ink);
+  background: var(--surface);
+  width: 100%;
+}
+.alert__text { flex: 1 0 0; min-width: 0; padding-top: 1px; }
+.alert--success { border-left-color: var(--gold); }
+.alert--warning { border-left-color: var(--muted); }
+.alert--danger { border-left-color: var(--negative); color: var(--pill-negative-ink); }
+
+/* Checkout options */
+.options-card {
+  padding: 0 12px;
+  display: flex;
+  flex-direction: column;
+}
+.option-row {
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px;
+  width: 100%;
+  text-align: left;
+}
+.option-row + .option-row { border-top: 1px solid var(--rule); }
+button.option-row:hover .option-row__label { text-decoration: underline; text-underline-offset: 3px; }
+.option-row__label { flex: 1 0 0; min-width: 0; }
+.option-row__value { white-space: nowrap; }
+
+/* Status badge — gold only while the lamp is on */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-badge);
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.status-badge--L { height: 30px; padding: 0 10px; }
+.status-badge--M { height: 24px; padding: 0 8px; }
+.status-badge--muted { background: var(--active); color: var(--ink); }
+.status-badge--accent { background: var(--gold); color: var(--ink); }
+.status-badge--success { background: var(--gold); color: var(--ink); }
+.status-badge--dark { background: var(--ink); color: var(--on-dark); }
+.status-badge--error { background: var(--pill-negative-bg); color: var(--pill-negative-ink); }
+
+/* The conduit tracker */
+.conduit {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  --pipe-done: var(--ink);
+  --pipe-off: var(--control);
+  --lamp-done: var(--ink);
+  --lamp-off: var(--control);
+  --lamp-lit: var(--ink);
+  --lamp-bg: var(--ground);
+}
+.conduit--dark {
+  --pipe-done: #8d8d89;
+  --pipe-off: #3d3d3b;
+  --lamp-done: #8d8d89;
+  --lamp-off: #5a5a57;
+  --lamp-lit: #e9e9e6;
+  --lamp-bg: var(--ink);
+}
+.conduit__step {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  min-height: 60px;
+}
+.conduit__step:last-child { min-height: 44px; }
+/* the pipe the lamps hang from */
+.conduit__step::before {
+  content: '';
+  position: absolute;
+  left: 13.75px;
+  top: 0;
+  bottom: 0;
+  width: 2.5px;
+  background: var(--pipe-off);
+}
+.conduit__step--done::before,
+.conduit__step--lit::before { background: var(--pipe-done); }
+.conduit__step--lit::before { bottom: 50%; }
+.conduit__step:last-child::before { bottom: auto; height: 8px; }
+.conduit__lamp {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+}
+.conduit__step--done .conduit__lamp { color: var(--lamp-done); }
+.conduit__step--off .conduit__lamp { color: var(--lamp-off); }
+.conduit__step--lit .conduit__lamp { color: var(--lamp-lit); }
+.conduit__text {
+  display: flex;
+  flex-direction: column;
+  padding-top: 10px;
+}
+.conduit__step--off .conduit__text { color: var(--faint); }
+.conduit--dark .conduit__step--off .conduit__text { color: #8d8d89; }
+.conduit__time { color: var(--muted); }
+.conduit--dark .conduit__time { color: var(--on-dark-muted); }
+.conduit__step--lit .lamp__pool { animation: lamp-warm 2.4s ease-in-out infinite; }
+@keyframes lamp-warm {
+  50% { opacity: 0.18; }
+}
+
+/* Order line */
+.order-line {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 10px 0;
+}
+.order-line + .order-line { border-top: 1px solid var(--rule); }
+.order-line__qty { width: 28px; flex-shrink: 0; }
+.order-line__text {
+  flex: 1 0 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Order card */
+.order-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+}
+.order-card:hover { border-color: var(--control); }
+.order-card__hit {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-card);
+}
+.order-card__head,
+.order-card__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.order-card__summary {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.order-card__action,
+.order-card__head .status-badge { position: relative; }
+
+@media (prefers-reduced-motion: reduce) {
+  .conduit__step--lit .lamp__pool { animation: none; }
+}

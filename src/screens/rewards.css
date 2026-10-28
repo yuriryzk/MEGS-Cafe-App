@@ -1,0 +1,218 @@
+/* Points — the balance is earned light: gold numerals on the black board */
+.points-card.card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px 16px 20px;
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--on-dark);
+}
+.points-card .t-caption { color: var(--on-dark-muted) !important; }
+.points-card .t-display { color: var(--gold); font-variant-numeric: tabular-nums; }
+.points-card .t-body-sm.muted { color: var(--on-dark-muted); }
+.points-card .tier-progress { margin-top: 10px; }
+.points-card .tier-progress__track { background: #3a3a38; }
+
+.tier-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  padding: var(--space-16);
+  align-items: flex-start;
+}
+.tier-card .tier-progress { align-self: stretch; }
+
+.tier-progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  width: 100%;
+}
+.tier-progress__track {
+  display: block;
+  height: 6px;
+  background: var(--rule);
+  overflow: hidden;
+}
+.tier-progress__track span {
+  display: block;
+  height: 100%;
+  background: var(--gold);
+}
+
+/* Reward card — a ticket: the cost in wide numerals, then the reward */
+.reward-card {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 14px 14px 12px;
+  min-height: 132px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--ink);
+  border-radius: var(--radius-card);
+  text-align: left;
+}
+.reward-card:hover { border-color: var(--control); border-top-color: var(--ink); }
+.reward-card__cost {
+  font-size: 26px;
+  line-height: 30px;
+  font-weight: 700;
+  font-stretch: 118%;
+  letter-spacing: -0.02em;
+}
+.reward-card__name { width: 100%; flex: 1 0 auto; }
+.reward-card__status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  font-weight: 600;
+}
+.reward-card--available { border-top-color: var(--gold); }
+.reward-card--available:hover { border-top-color: var(--gold); }
+.reward-card--available .reward-card__status { color: var(--ink); }
+.reward-card--need .reward-card__status,
+.reward-card--need .reward-card__cost { color: var(--faint); }
+.reward-card--redeemed .reward-card__status { color: var(--ink); }
+.reward-card--expired { background: var(--raised); }
+.reward-card--expired .reward-card__cost,
+.reward-card--expired .reward-card__name,
+.reward-card--expired .reward-card__status { color: var(--faint); }
+
+.reward-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-items: stretch;
+}
+
+/* Activity */
+.activity-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+}
+.activity-row + .activity-row { border-top: 1px solid var(--rule); }
+.activity-row__disc {
+  width: 36px;
+  height: 36px;
+  border-radius: 18px;
+  background: var(--active);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.activity-row__disc.is-earned { background: var(--gold); }
+.activity-row__text {
+  flex: 1 0 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.activity-row__points {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-variant-numeric: tabular-nums;
+}
+.activity-group {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 12px 16px 4px;
+}
+.activity-group > h2 { margin-bottom: 4px; }
+
+/* Detail screens (reward / promotion): the black board header */
+.detail-content { gap: var(--space-16); }
+.board {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 22px 16px 24px;
+  background: var(--ink);
+  color: var(--on-dark);
+  border-radius: var(--radius-card);
+}
+.board__figure {
+  font-size: 40px;
+  line-height: 44px;
+  font-weight: 700;
+  font-stretch: 118%;
+  letter-spacing: -0.02em;
+  color: var(--gold);
+}
+.board__figure .t-h3 { color: var(--on-dark-muted); }
+.board__title { color: var(--gold); max-width: 15ch; }
+.board__text { color: var(--on-dark-muted); }
+.board .validity { color: var(--on-dark-muted); }
+.board--dim .board__figure,
+.board--dim .board__title { color: var(--on-dark-muted); }
+.validity {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.terms {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+.terms__item {
+  display: flex;
+  gap: var(--space-8);
+  align-items: flex-start;
+}
+.terms__item > :first-child { margin-top: 2px; }
+
+.how-it-works {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* Promo card */
+.promo-card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 12px 14px 16px;
+  min-height: 72px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--gold);
+  border-radius: var(--radius-card);
+  text-align: left;
+}
+.promo-card:hover { border-color: var(--control); border-left-color: var(--gold); }
+.promo-card__text {
+  flex: 1 0 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.promo-card__title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.promo-card.is-past { border-left-color: var(--control); background: var(--raised); }
+.promo-card.is-past .promo-card__title { color: var(--muted); }
+.promo-card__status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  color: var(--muted);
+}
