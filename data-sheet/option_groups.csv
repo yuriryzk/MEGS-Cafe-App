@@ -1,8 +1,9 @@
 ﻿id,title,required,pick,applies_to,sort_order
 size,Size,yes,one,kind=drink,1
-milk,Milk,no,one,oat_milk_swap=yes,2
-add-ons,Add-ons,no,many,kind=drink,3
-fries-flavor,Flavor,yes,one,id=potato-fries-flavored,4
-wings-flavor,Flavor,yes,one,id=chicken-wings-flavored,5
-rice-meal-add-ons,Add-ons,no,many,section=rice-meals,6
-snack-add-ons,Add-ons,no,many,section=pastas|snacks|chicken,7
+sugar,Sugar level,no,one,kind=drink,2
+milk,Milk,no,one,oat_milk_swap=yes,3
+add-ons,Add-ons,no,many,kind=drink,4
+fries-flavor,Flavor,yes,one,id=potato-fries-flavored,5
+wings-flavor,Flavor,yes,one,id=chicken-wings-flavored,6
+rice-meal-add-ons,Add-ons,no,many,section=rice-meals,7
+snack-add-ons,Add-ons,no,many,section=pastas|snacks|chicken,8

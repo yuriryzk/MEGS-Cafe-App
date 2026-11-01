@@ -29,10 +29,12 @@ import {
   EditProfile,
   Notifications,
   PaymentMethods,
+  Privacy,
   Profile,
   SavedAddresses,
   Settings,
 } from './screens/profile'
+import { staffSignIn, staffLogout } from './state/shared'
 
 type App = ReturnType<typeof useApp>
 
@@ -50,6 +52,8 @@ export type IndexEntry = {
   /** Overlay to open on top of the screen (O-xx frames). */
   overlay?: OverlayId
   overlayData?: Record<string, unknown>
+  /** Staff console screens open in a new tab, so the two apps can sit side by side */
+  external?: boolean
 }
 
 export type IndexGroup = { title: string; entries: IndexEntry[] }
@@ -117,6 +121,7 @@ export const routes: RouteDef[] = [
   { path: '/profile/payment/add', element: <AddPaymentMethod /> },
   { path: '/profile/addresses', element: <SavedAddresses /> },
   { path: '/settings', element: <Settings /> },
+  { path: '/settings/privacy', element: <Privacy /> },
   { path: '/notifications', element: <Notifications /> },
 ]
 
@@ -132,6 +137,7 @@ export const index: IndexGroup[] = [
       { code: 'C-04', label: 'Sign up', to: '/sign-up' },
       { code: 'C-05', label: 'Verification', to: '/verify' },
       { code: 'C-06', label: 'Log in', to: '/log-in' },
+    { code: 'C-06', label: 'Log in · Offline', to: '/log-in?offline=1' },
       { code: 'C-07', label: 'Forgot password', to: '/forgot-password' },
       { code: 'C-08', label: 'Reset password', to: '/reset-password' },
     ],
@@ -151,6 +157,8 @@ export const index: IndexGroup[] = [
       },
       { code: 'C-09', label: 'Home · Guest', to: '/home', prep: (a) => a.setSession('guest') },
       { code: 'C-09', label: 'Home · Loading', to: '/home?state=loading', prep: member },
+      { code: 'C-09', label: 'Home · Closed', to: '/home?closed=1', prep: member },
+      { code: 'C-09', label: 'Home · Offline', to: '/home?offline=1', prep: member },
       { code: 'C-10', label: 'Menu', to: '/menu' },
       { code: 'C-11', label: 'Section list', to: '/menu/section/best' },
       { code: 'C-12', label: 'Search', to: '/search' },
@@ -167,6 +175,7 @@ export const index: IndexGroup[] = [
       { code: 'C-33', label: 'Delivery address', to: '/address/new', prep: delivery },
       { code: 'C-15', label: 'Checkout', to: '/checkout', prep: pickup },
       { code: 'C-15', label: 'Checkout · Delivery', to: '/checkout', prep: delivery },
+      { code: 'C-15', label: 'Checkout · Closed', to: '/checkout?closed=1', prep: pickup },
       { code: 'C-15', label: 'Checkout · Processing', to: '/checkout?state=processing', prep: pickup },
       {
         code: 'C-15',
@@ -200,7 +209,6 @@ export const index: IndexGroup[] = [
 
 const tracking = (f: 'pickup' | 'delivery') => (a: App) => {
   member(a)
-  a.setFulfillment(f)
   a.seedDemoOrder(f)
 }
 
@@ -224,12 +232,7 @@ index.push({
       code: 'C-18',
       label: 'Orders · Active',
       to: '/orders',
-      prep: (a) => {
-        tracking('pickup')(a)
-        a.setTrackStage(2)
-        a.setOrderCancelled(false)
-        a.setActiveOrder({ number: 1042, status: 'Preparing', eta: 'Ready in about 8 min' })
-      },
+      prep: tracking('pickup'),
     },
     { code: 'C-18', label: 'Orders · History', to: '/orders?tab=history', prep: member },
     { code: 'C-19', label: 'Order detail', to: '/orders/1038', prep: member },
@@ -279,13 +282,44 @@ index.push({
     { code: 'C-28', label: 'Edit profile', to: '/profile/edit', prep: member },
     { code: 'C-28', label: 'Edit profile · Saved', to: '/profile/edit?state=saved', prep: member },
     { code: 'C-29', label: 'Settings', to: '/settings', prep: member },
+    { code: 'C-34', label: 'Privacy', to: '/settings/privacy', prep: member },
     { code: 'C-30', label: 'Notifications', to: '/notifications', prep: member },
     { code: 'C-31', label: 'Payment methods', to: '/profile/payment', prep: member },
     { code: 'C-31', label: 'Add payment method', to: '/profile/payment/add', prep: member },
   ],
 })
 
-/** Overlays (O-01 … O-12) — each opens on top of the screen it belongs to. */
+const staff = () => {
+  staffSignIn()
+}
+const staffOut = () => {
+  staffLogout()
+}
+
+/** The staff console (A-01 … A-11, OA-01 … OA-05). Each entry opens in a new tab beside the phone. */
+export const staffIndex: IndexGroup = {
+  title: 'Staff console',
+  entries: [
+    { code: 'A-01', label: 'Staff login', to: '/staff/login', prep: staffOut, external: true },
+    { code: 'A-02', label: 'Dashboard', to: '/staff', prep: staff, external: true },
+    { code: 'A-03', label: 'Incoming orders', to: '/staff/orders', prep: staff, external: true },
+    { code: 'A-04', label: 'Order detail', to: '/staff/orders/1042', prep: staff, external: true },
+    { code: 'A-05', label: 'Automated orders', to: '/staff/automations', prep: staff, external: true },
+    { code: 'A-06', label: 'Automated order detail', to: '/staff/automations/auto-6', prep: staff, external: true },
+    { code: 'A-07', label: 'Response templates', to: '/staff/responses', prep: staff, external: true },
+    { code: 'A-08', label: 'Template editor', to: '/staff/responses/ready-pickup', prep: staff, external: true },
+    { code: 'A-09', label: 'Store settings', to: '/staff/settings', prep: staff, external: true },
+    { code: 'A-10', label: 'Item availability', to: '/staff/availability', prep: staff, external: true },
+    { code: 'A-11', label: 'Staff profile', to: '/staff/profile', prep: staff, external: true },
+    { code: 'OA-01', label: 'Cancel order', to: '/staff/orders/1040?sheet=cancel', prep: staff, external: true },
+    { code: 'OA-02', label: 'Internal note', to: '/staff/orders/1042?sheet=note', prep: staff, external: true },
+    { code: 'OA-03', label: 'Template preview', to: '/staff/responses/ready-pickup?sheet=preview', prep: staff, external: true },
+    { code: 'OA-04', label: 'Discard changes?', to: '/staff/responses/ready-pickup?sheet=discard', prep: staff, external: true },
+    { code: 'OA-05', label: 'Retry automated order', to: '/staff/automations/auto-6?sheet=retry', prep: staff, external: true },
+  ],
+}
+
+/** Overlays (O-01 … O-15) — each opens on top of the screen it belongs to. */
 export const overlayIndex: IndexGroup = {
   title: 'Overlays',
   entries: [
@@ -326,5 +360,8 @@ export const overlayIndex: IndexGroup = {
     },
     { code: 'O-11', label: 'Get order updates', to: '/orders/tracking', prep: member, overlay: 'order-updates' },
     { code: 'O-12', label: 'Log out?', to: '/profile', prep: member, overlay: 'logout' },
+    { code: 'O-13', label: "Payment didn't go through", to: '/checkout', prep: pickup, overlay: 'payment-declined' },
+    { code: 'O-14', label: "We couldn't place your order", to: '/checkout', prep: pickup, overlay: 'order-failed' },
+    { code: 'O-15', label: 'Delete account?', to: '/settings', prep: member, overlay: 'delete-account' },
   ],
 }

@@ -14,8 +14,11 @@ import {
   RuleCheck,
   TextField,
 } from '../components/ui'
-import { Alert } from '../components/order'
+import { Alert, OfflineBanner } from '../components/order'
 import { toIntl, useApp } from '../state/AppState'
+import { useOverlay } from '../overlays/OverlayHost'
+import { retryConnection, useOnline } from '../state/online'
+import { customerLogin, getShared } from '../state/shared'
 import lineupPhoto from '../assets/photos/iced-coffee-lineup.webp'
 import wingsPhoto from '../assets/photos/wings-and-drinks.webp'
 import logoWallPhoto from '../assets/photos/logo-wall-breakfast.webp'
@@ -142,7 +145,17 @@ export function Onboarding({ slide }: { slide: number }) {
 /** C-03 Welcome */
 export function Welcome() {
   const navigate = useNavigate()
+  const [params, setParams] = useSearchParams()
+  const overlay = useOverlay()
   const { setSession } = useApp()
+
+  // FR-ACC-11: a deleted account lands here with a short confirmation
+  useEffect(() => {
+    if (params.get('deleted') !== '1') return
+    setSession('signed-out')
+    overlay.toast('Account deleted')
+    setParams({}, { replace: true })
+  }, [params, setParams, overlay, setSession])
 
   return (
     <Screen
@@ -184,22 +197,36 @@ export function Welcome() {
   )
 }
 
+/** The demo account's number: signing up with it again is caught */
+const REGISTERED_PHONE = '0917 123 4567'
+const digits = (v: string) => v.replace(/\D/g, '').replace(/^(63|0)/, '')
+
 /** C-04 Sign Up */
 export function SignUp() {
   const navigate = useNavigate()
-  const { phone, setPhone, name, setName } = useApp()
+  const { setPhone, name, setName } = useApp()
+  const online = useOnline()
+  const [mobile, setMobile] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   // DPA: consent is the customer's to give, so the box starts unticked
   const [agreed, setAgreed] = useState(false)
   const strong = password.length >= 8 && /\d/.test(password)
-  const valid = name.trim() !== '' && phone.replace(/\D/g, '').length >= 10 && strong && agreed
+  // 3.2.1.5: a number that already has an account gets a link to Log in instead
+  const taken = digits(mobile) === digits(REGISTERED_PHONE)
+  const valid = name.trim() !== '' && digits(mobile).length >= 10 && !taken && strong && agreed
 
   return (
     <Screen
       topBar={<TopBar />}
       footer={
-        <Button disabled={!valid} onClick={() => navigate('/verify')}>
+        <Button
+          disabled={!valid || !online}
+          onClick={() => {
+            setPhone(mobile)
+            navigate('/verify')
+          }}
+        >
           Continue
         </Button>
       }
@@ -208,6 +235,11 @@ export function SignUp() {
         <Row>
           <h1 className="t-h1">Create your account</h1>
         </Row>
+        {!online && (
+          <Row>
+            <OfflineBanner onRetry={retryConnection}>You're offline. Connect to create your account.</OfflineBanner>
+          </Row>
+        )}
         <Row>
           <TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />
         </Row>
@@ -215,11 +247,23 @@ export function SignUp() {
           <TextField
             label="Mobile number"
             helper="We will text you a 6-digit code"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            placeholder="0917 123 4567"
+            value={mobile}
+            onChange={(e) => setMobile(e.target.value)}
             inputMode="tel"
             autoComplete="tel"
+            error={taken ? 'This number already has an account.' : undefined}
           />
+          {taken && (
+            <Button
+              variant="text"
+              height={48}
+              full={false}
+              onClick={() => navigate(`/log-in?id=${encodeURIComponent(mobile)}`)}
+            >
+              Log in with this number
+            </Button>
+          )}
         </Row>
         <Row>
           <TextField
@@ -318,25 +362,56 @@ export function Verification() {
   )
 }
 
-/** C-06 Log In */
+/** "14:32" */
+const mmss = (ms: number) => {
+  const t = Math.max(0, Math.ceil(ms / 1000))
+  return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`
+}
+
+/** C-06 Log In — FR-ACC-07: 5 wrong passwords lock sign-in for 15 minutes, with a live countdown */
 export function LogIn() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const { setSession } = useApp()
-  const [id, setId] = useState('maria@email.com')
-  const [password, setPassword] = useState('password1')
+  const online = useOnline()
+  const [id, setId] = useState(params.get('id') ?? 'maria@email.com')
+  const [password, setPassword] = useState(params.get('id') ? '' : 'password1')
+  const [error, setError] = useState('')
+  // A lock from an earlier visit still holds
+  const [lockedUntil, setLockedUntil] = useState(() => getShared().loginAttempts[id.trim().toLowerCase()]?.lockedUntil ?? 0)
+  const [now, setNow] = useState(Date.now())
+  const locked = lockedUntil > now
+
+  useEffect(() => {
+    if (!locked) return
+    const t = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(t)
+  }, [locked])
+
+  const submit = () => {
+    const r = customerLogin(id, password)
+    if (r.ok) {
+      setSession('member')
+      navigate('/home', { replace: true })
+      return
+    }
+    setNow(Date.now())
+    if (r.lockedUntil) {
+      setLockedUntil(r.lockedUntil)
+      setError('')
+    } else {
+      // One banner, never saying which field was wrong (3.2.1.5)
+      setError(
+        `That mobile number or email and password don't match. ${r.left} attempt${r.left === 1 ? '' : 's'} left before sign-in is paused.`,
+      )
+    }
+  }
 
   return (
     <Screen
       topBar={<TopBar />}
       footer={
-        <Button
-          disabled={!id || !password}
-          onClick={() => {
-            setSession('member')
-            navigate('/home', { replace: true })
-          }}
-        >
+        <Button disabled={!id || !password || locked || !online} onClick={submit}>
           Log in
         </Button>
       }
@@ -345,16 +420,36 @@ export function LogIn() {
         <Row>
           <h1 className="t-h1">Log in</h1>
         </Row>
+        {!online && (
+          <Row>
+            <OfflineBanner onRetry={retryConnection}>You're offline. Connect to log in.</OfflineBanner>
+          </Row>
+        )}
         {params.get('updated') && (
           <Row>
             <Alert tone="success">Password updated. Log in with your new password.</Alert>
+          </Row>
+        )}
+        {locked && (
+          <Row>
+            <Alert tone="danger">
+              Too many attempts. Try again in <span className="num">{mmss(lockedUntil - now)}</span>.
+            </Alert>
+          </Row>
+        )}
+        {error && !locked && (
+          <Row>
+            <Alert tone="danger">{error}</Alert>
           </Row>
         )}
         <Row>
           <TextField
             label="Mobile number or email"
             value={id}
-            onChange={(e) => setId(e.target.value)}
+            onChange={(e) => {
+              setId(e.target.value)
+              setLockedUntil(0)
+            }}
             autoComplete="username"
           />
         </Row>
@@ -364,6 +459,7 @@ export function LogIn() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="current-password"
+            helper="Demo password: password1"
           />
         </Row>
         <Row>

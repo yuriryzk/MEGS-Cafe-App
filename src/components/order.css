@@ -424,3 +424,22 @@ button.option-row:hover .option-row__label { text-decoration: underline; text-un
 
 .discount-row { align-items: flex-start; }
 .discount-row__body { display: flex; flex-direction: column; min-width: 0; }
+
+/* Offline and closed banners: one line of state, a plain action on the right */
+.offline-banner { align-items: center; }
+.offline-banner__retry { flex-shrink: 0; min-height: 44px; padding: 0 4px; }
+.closed-banner { border-left-color: var(--ink); }
+.closed-banner__text { display: flex; flex-direction: column; gap: 2px; }
+
+/* A cart line whose item has since sold out */
+.cart-item__gone {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--negative);
+  font-weight: 600;
+}
+
+/* The payment row when no method is chosen (FR-CHK-07) */
+.options-card--error { border-color: var(--negative); }
+.fulfillment-seg:disabled { opacity: 0.5; cursor: not-allowed; }

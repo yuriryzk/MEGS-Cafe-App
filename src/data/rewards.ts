@@ -1,6 +1,6 @@
 // Rewards catalogue, points activity and promotions (Flow 5).
 // Rewards and offers name real items from the menu boards; the offers are samples for the cafe to confirm.
-import type { CartLine } from '../state/AppState'
+import type { CartLine } from '../state/shared'
 import { peso, productById } from './menu'
 
 /** One item a reward makes free: the cheapest unit in the cart that fits it. */
@@ -246,4 +246,52 @@ export function offerHint(cart: CartLine[]): string | null {
     return `Add Potato Fries · Plain: ${fries ? 'another one is' : "it's"} free with your rice meal.`
   }
   return null
+}
+
+/* ----- Promo codes (SRS FR-CHK-05, FR-PRO-08) ----- */
+
+export type PromoCode = {
+  code: string
+  /** Shown on the receipt line, e.g. "Promo MEGS10" */
+  label: string
+  /** Percent off what is left after the tier discount */
+  percent: number
+  minSpend: number
+  /** Valid from the start of `starts` to the end of `ends`, Asia/Manila */
+  starts: string
+  ends: string
+  /** One use per customer; a cancelled order gives the use back */
+  oncePerCustomer: boolean
+}
+
+// A sample code for the demo; the cafe sets its own
+export const promoCodes: PromoCode[] = [
+  {
+    code: 'MEGS10',
+    label: 'Promo MEGS10',
+    percent: 10,
+    minSpend: 200,
+    starts: '2026-10-01',
+    ends: '2027-06-30',
+    oncePerCustomer: true,
+  },
+]
+
+export type PromoCheck = { ok: true; promo: PromoCode; amount: number } | { ok: false; error: string }
+
+const day = (iso: string, end = false) => Date.parse(`${iso}T${end ? '23:59:59' : '00:00:00'}+08:00`)
+const shortDate = (iso: string) =>
+  new Date(day(iso)).toLocaleDateString('en-PH', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Manila' })
+
+/** Checks a code against its date window, minimum spend and usage limit, and works out what it takes off.
+ *  (In the full system the server does this.) */
+export function checkPromo(code: string, subtotal: number, afterTier: number, used: string[], now = Date.now()): PromoCheck {
+  const promo = promoCodes.find((p) => p.code === code.trim().toUpperCase())
+  if (!promo) return { ok: false, error: "This code can't be used with your order." }
+  if (now < day(promo.starts)) return { ok: false, error: `This code starts on ${shortDate(promo.starts)}.` }
+  if (now > day(promo.ends, true)) return { ok: false, error: `This code ended on ${shortDate(promo.ends)}.` }
+  if (promo.oncePerCustomer && used.includes(promo.code)) return { ok: false, error: "You've already used this code." }
+  if (subtotal < promo.minSpend)
+    return { ok: false, error: `Spend ${peso(promo.minSpend)} or more to use this code. Add ${peso(promo.minSpend - subtotal)} more.` }
+  return { ok: true, promo, amount: Math.round((afterTier * promo.percent) / 100) }
 }

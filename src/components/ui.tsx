@@ -115,6 +115,34 @@ export function Checkbox({
   )
 }
 
+/** Toggle — a labelled switch that saves as soon as it changes */
+export function Toggle({
+  label,
+  description,
+  on,
+  onChange,
+  disabled,
+}: {
+  label: string
+  description?: string
+  on: boolean
+  onChange: (v: boolean) => void
+  disabled?: boolean
+}) {
+  return (
+    <label className={`toggle ${disabled ? 'is-disabled' : ''}`}>
+      <span className="toggle__text">
+        <span className="t-body">{label}</span>
+        {description && <span className="t-body-sm muted">{description}</span>}
+      </span>
+      <input type="checkbox" role="switch" checked={on} disabled={disabled} onChange={(e) => onChange(e.target.checked)} />
+      <span className={`toggle__track ${on ? 'is-on' : ''}`} aria-hidden>
+        <span />
+      </span>
+    </label>
+  )
+}
+
 /** Input / OTP — six 48×56 digit boxes. */
 export function OtpInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const refs = useRef<(HTMLInputElement | null)[]>([])
@@ -191,8 +219,8 @@ export function Logo({ height = 120, label = "MEGS' Cafe" }: { height?: number; 
 const LOGO_RATIO = 364 / 480
 
 /** Feedback / Loader — the gold spinner reads as the lamp warming up, on ink buttons and on the dark splash. */
-export function Loader(_props: { dark?: boolean }) {
-  return <img className="loader" src={spinner} width={24} height={24} alt="Loading" />
+export function Loader({ dark = false }: { dark?: boolean }) {
+  return <img className="loader" data-on={dark ? 'dark' : 'light'} src={spinner} width={24} height={24} alt="Loading" />
 }
 
 /** Rule / Check — Met ("Done") and Unmet (muted, optional "Not yet") rows. */

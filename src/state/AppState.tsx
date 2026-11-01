@@ -1,83 +1,61 @@
 import { createContext, useContext, useEffect, useMemo, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react'
-import { defaultOrder } from '../data/menu'
-import { bestOffer, rewardById, rewardSavings, type MyReward } from '../data/rewards'
+import { useLocation } from 'react-router-dom'
+import { defaultOrder, productById } from '../data/menu'
+import { bestOffer, checkPromo, rewardById, rewardSavings, type MyReward } from '../data/rewards'
+import {
+  COUNTER,
+  CUSTOMER_ID,
+  createOrder,
+  openState,
+  quietly,
+  redeem,
+  sampleLines,
+  setPoints,
+  toIntlPhone,
+  useShared,
+  type Address,
+  type CartLine,
+  type Fulfillment,
+  type OpenState,
+  type Order,
+  type OrderStatus,
+} from './shared'
+
+export type { Address, CartLine, Fulfillment } from './shared'
+export { COUNTER, sampleLines } from './shared'
 
 export type Session = 'signed-out' | 'guest' | 'member'
-
-export type CartLine = {
-  key: string
-  productId: string
-  /** Chosen options, e.g. ["Medium · 16 oz", "Hot", "Oat milk"] */
-  options: string[]
-  note: string
-  unitPrice: number
-  qty: number
-}
 
 /** Lines with the same item, options and note share a key and stack their quantities. */
 const lineKey = (l: Omit<CartLine, 'key'>) => [l.productId, ...l.options, l.note].join('|')
 
-export type ActiveOrder = { number: number; status: string; eta: string }
-
-export type Address = {
-  id: string
-  label: 'Home' | 'Work' | 'Other'
-  name: string
-  street: string
-  phone: string
-  notes?: string
-  isDefault?: boolean
-}
-
-export type Fulfillment = 'pickup' | 'delivery'
-
 /** C-31 Payment Methods row: label + status ("Default", "Linked"). */
 export type PaymentMethod = { label: string; status?: string }
 
-/** Snapshot of an order at the moment it was placed (Order Confirmation, Tracking). */
-export type PlacedOrder = {
-  number: number
-  fulfillment: Fulfillment
-  address?: Address
-  lines: CartLine[]
-  subtotal: number
-  discount: number
-  deliveryFee: number
-  total: number
-  payment: string
-  points: number
-  /** The reward used on this order and what it took off */
-  rewardId?: string
-  rewardName?: string
-  rewardDiscount?: number
-  /** Points already credited for this order (FR-LOY-01: once, on Completed) */
-  pointsCredited?: boolean
-  /** The offer applied to this order and what it took off */
-  offerName?: string
-  offerDiscount?: number
-}
+/** An order as the customer sees it (staff-only fields are never rendered in the customer app) */
+export type PlacedOrder = Order
 
 /** The money in the cart, worked out once and shown the same in the cart, checkout and the order. */
 export type Totals = {
   subtotal: number
   /** The applied reward: which items it made free and what it took off */
   reward: { name: string; amount: number; items: { name: string; amount: number }[] } | null
-  /** The active offer that saves the most on what the reward left: one per order */
-  offer: { name: string; amount: number; note: string } | null
-  /** Regular 5% discount, on what is left after the reward and the offer */
+  /** The order's one promotion: a promo code if one is applied, else the best automatic offer */
+  offer: { name: string; amount: number; note: string; code?: string } | null
+  /** Regular 5% discount on the subtotal, applied first */
   discount: number
   deliveryFee: number
   total: number
+  /** Why an applied promo code no longer counts (the code row is dropped and a banner says why) */
+  promoProblem?: string
 }
 
-/** SRS AS-02 / TBD-05: flat delivery fee, proposed ₱25 (configurable) */
-export const DELIVERY_FEE = 25
-/** "Pay at counter" only makes sense for pickup */
-export const COUNTER = 'Pay at counter'
 /** Regular-tier discount: 5% of subtotal. */
 export const tierDiscount = (subtotal: number) => Math.round(subtotal * 0.05)
 /** Spend this much to unlock a free drink (cart nudge). */
 export const FREE_DRINK_THRESHOLD = 500
+/** Drink sizes a customer can save as their default (FR-CRT-05) */
+export const DRINK_SIZES = ['Cold · 16 oz', 'Cold · 22 oz', 'Hot · 12 oz']
 
 type AppState = {
   session: Session
@@ -99,9 +77,13 @@ type AppState = {
   updateLine: (key: string, line: Omit<CartLine, 'key'>) => void
   setQty: (key: string, qty: number) => void
   clearCart: () => void
+  /** Cart lines whose item has since been marked sold out: checkout waits until they are removed */
+  unavailableLines: CartLine[]
 
-  activeOrder: ActiveOrder | null
-  setActiveOrder: (o: ActiveOrder | null) => void
+  /** This customer's orders that are still in progress, newest first */
+  activeOrders: Order[]
+  /** Every order this customer placed in the app, newest first */
+  myOrders: Order[]
 
   promoDismissed: boolean
   setPromoDismissed: (v: boolean) => void
@@ -121,17 +103,19 @@ type AppState = {
   useTierDiscount: boolean
   setUseTierDiscount: (v: boolean) => void
 
-  lastOrder: PlacedOrder | null
-  placeOrder: (note: string) => PlacedOrder
+  /** The order placed last on this phone (confirmation, tracking) */
+  lastOrder: Order | null
+  setLastOrderNumber: (n: number | null) => void
+  /** Places the cart as an order; the same attempt id never makes a second order */
+  placeOrder: (note: string, attemptId: string) => Order
 
   notificationsOn: boolean
   setNotificationsOn: (v: boolean) => void
-
-  /** Tracking progress of the active order: 0 Received … 4 Completed/Delivered. */
-  trackStage: number
-  setTrackStage: (n: number) => void
-  orderCancelled: boolean
-  setOrderCancelled: (v: boolean) => void
+  /** DPA consent for promotional messages (Privacy, Settings) — off until the customer turns it on */
+  promoConsent: boolean
+  setPromoConsent: (v: boolean) => void
+  remindersOn: boolean
+  setRemindersOn: (v: boolean) => void
 
   paymentMethods: PaymentMethod[]
   addPaymentMethod: (m: PaymentMethod, makeDefault: boolean) => void
@@ -143,37 +127,27 @@ type AppState = {
   /** The redeemed reward chosen for this order (Discounts and rewards sheet) */
   appliedReward: string | null
   setAppliedReward: (id: string | null) => void
-  /** A cancelled order's voucher goes back to My rewards (FR-TRK-05) */
-  restoreReward: (id: string) => void
+  /** The promo code applied to this order */
+  appliedPromo: string | null
+  setAppliedPromo: (code: string | null) => void
+  promoUses: string[]
   totals: Totals
+
+  /** Saved default drink size, preselected on product pages (FR-CRT-05) */
+  defaultSize: string
+  setDefaultSize: (s: string) => void
+
+  /** Whether the cafe takes orders right now (FR-CHK-11) */
+  open: OpenState
+  deliveryEnabled: boolean
+  deliveryFee: number
+  prepMinutes: number
 
   /** Prototype helper: fill the cart with the 3 items shown in the Figma checkout frames. */
   seedCart: () => void
-  /** Prototype helper: make `lastOrder` the Figma sample order (#1042). */
-  seedDemoOrder: (f: Fulfillment) => void
+  /** Prototype helper: make the sample order #1042 this phone's last order, in this state. */
+  seedDemoOrder: (f: Fulfillment, status?: OrderStatus) => void
 }
-
-/** The demo cart for the checkout screens (₱480 subtotal), priced from the menu boards:
- *  Caramel Macchiato cold 22 oz ₱140 · Carbonara ₱180 · Spanish Latte cold 16 oz ₱110 + oat milk ₱50. */
-export const sampleLines: CartLine[] = [
-  {
-    key: 'sample-1',
-    productId: 'caramel-macchiato',
-    options: ['Cold · 22 oz', 'Regular milk'],
-    note: '',
-    unitPrice: 140,
-    qty: 1,
-  },
-  { key: 'sample-2', productId: 'carbonara', options: [], note: '', unitPrice: 180, qty: 1 },
-  {
-    key: 'sample-3',
-    productId: 'spanish-latte',
-    options: ['Cold · 16 oz', 'Oat milk'],
-    note: 'less ice',
-    unitPrice: 160,
-    qty: 1,
-  },
-]
 
 const Ctx = createContext<AppState | null>(null)
 
@@ -206,7 +180,7 @@ function usePersisted<T>(key: string, initial: T | (() => T)): [T, Dispatch<SetS
   return [value, setValue]
 }
 
-/** Clears everything the demo saved on this phone and starts again from the splash screen. */
+/** Clears everything the demo saved on this device — customer, staff, store and orders — and starts again. */
 export function resetDemo() {
   try {
     Object.keys(window.localStorage)
@@ -220,16 +194,12 @@ export function resetDemo() {
 }
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
+  const shared = useShared()
   const [session, setSession] = usePersisted<Session>('session', demo ? 'member' : 'signed-out')
   const [firstLaunch, setFirstLaunch] = usePersisted('firstLaunch', false)
   const [phone, setPhone] = usePersisted('phone', '0917 123 4567')
   const [name, setName] = usePersisted('name', 'Maria Santos')
   const [cart, setCart] = usePersisted<CartLine[]>('cart', demo === 'cart' ? sampleLines : [])
-  const [activeOrder, setActiveOrder] = usePersisted<ActiveOrder | null>('activeOrder', {
-    number: 1042,
-    status: 'Preparing',
-    eta: 'Ready in about 8 min',
-  })
   const [promoDismissed, setPromoDismissed] = usePersisted('promoDismissed', false)
   const [recentSearches, setRecentSearches] = usePersisted('recentSearches', ['Spanish Latte', 'Matcha', 'Carbonara', 'Hot Chocolate'])
   const [fulfillment, setFulfillment] = usePersisted<Fulfillment>('fulfillment', 'pickup')
@@ -254,26 +224,29 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [addressId, setAddressId] = usePersisted('addressId', 'home')
   const [payment, setPayment] = usePersisted('payment', 'Pay at counter')
   const [useTierDiscount, setUseTierDiscount] = usePersisted('useTierDiscount', true)
-  const [lastOrder, setLastOrder] = usePersisted<PlacedOrder | null>('lastOrder', null)
-  const [nextNumber, setNextNumber] = usePersisted('nextNumber', 1043)
+  const [lastOrderNumber, setLastOrderNumber] = usePersisted<number | null>('lastOrderNumber', 1042)
   const [notificationsOn, setNotificationsOn] = usePersisted('notificationsOn', false)
-  const [trackStage, setTrackStage] = usePersisted('trackStage', 2)
-  const [orderCancelled, setOrderCancelled] = usePersisted('orderCancelled', false)
+  const [promoConsent, setPromoConsent] = usePersisted('promoConsent', false)
+  const [remindersOn, setRemindersOn] = usePersisted('remindersOn', true)
   const [paymentMethods, setPaymentMethods] = usePersisted<PaymentMethod[]>('paymentMethods', [
     { label: 'Card ending 4242', status: 'Default' },
+    // Test cards for the error states (see the README): 0002 always declines, 0119 fails once after payment
+    { label: 'Card ending 0002', status: 'Test · declines' },
+    { label: 'Card ending 0119', status: 'Test · order fails once' },
     { label: 'E-wallet', status: 'Linked' },
     { label: 'Pay at counter' },
   ])
-  const [points, setPoints] = usePersisted('points', 1240)
   const [appliedReward, setAppliedReward] = usePersisted<string | null>('appliedReward', null)
+  const [appliedPromo, setAppliedPromo] = usePersisted<string | null>('appliedPromo', null)
+  const [defaultSize, setDefaultSize] = usePersisted('defaultSize', '')
 
-  // FR-LOY-01 / IR-05: points are credited once, when the order is Completed, never for a cancelled one
-  useEffect(() => {
-    if (!lastOrder || lastOrder.pointsCredited || orderCancelled || trackStage < 4) return
-    setPoints((p) => p + lastOrder.points)
-    setLastOrder({ ...lastOrder, pointsCredited: true })
-  }, [lastOrder, orderCancelled, trackStage, setPoints, setLastOrder])
-
+  const { store, orders, points, myRewards, promoUses } = shared
+  // `?closed=1` shows the closed state for the screen index without touching the cafe's settings
+  const previewClosed = new URLSearchParams(useLocation().search).get('closed') === '1'
+  const open = useMemo(
+    () => openState(previewClosed ? { ...store, hours: store.hours.map((h) => ({ ...h, closed: true })) } : store),
+    [store, previewClosed],
+  )
 
   // Delivery can't be paid at the counter: move to the first other method
   useEffect(() => {
@@ -282,10 +255,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     }
   }, [fulfillment, payment, paymentMethods, setPayment])
 
-  const [myRewards, setMyRewards] = usePersisted<MyReward[]>('myRewards', [
-    { rewardId: 'free-drink', status: 'Redeemed' },
-    { rewardId: 'free-pastry', status: 'Expired' },
-  ])
+  // FR-OPS-05: when the cafe turns delivery off, a delivery cart becomes pickup
+  useEffect(() => {
+    if (!store.deliveryEnabled && fulfillment === 'delivery') setFulfillment('pickup')
+  }, [store.deliveryEnabled, fulfillment, setFulfillment])
 
   const value = useMemo<AppState>(() => {
     const addToCart: AppState['addToCart'] = (line) =>
@@ -308,55 +281,66 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         return prev.map((l) => (l.key === oldKey ? { ...line, key } : l))
       })
 
+    const member = session === 'member'
     const subtotal = cart.reduce((n, l) => n + l.qty * l.unitPrice, 0)
 
     // SRS AS-05 / FR-CHK-04: the tier discount first (on the subtotal), then one promotion, then one
-    // reward. The reward makes its item(s) free; the offer skips units the reward already covers,
-    // so the same item is never discounted twice.
-    const discount = useTierDiscount && session === 'member' ? tierDiscount(subtotal) : 0
+    // reward. A promo code is the order's promotion when applied; otherwise the best automatic offer.
+    // The reward makes its item(s) free; the offer skips units the reward already covers.
+    const discount = useTierDiscount && member ? tierDiscount(subtotal) : 0
     const usable = appliedReward && myRewards.some((m) => m.rewardId === appliedReward && m.status === 'Redeemed')
-    const def = usable && session === 'member' ? rewardById(appliedReward!) : undefined
+    const def = usable && member ? rewardById(appliedReward!) : undefined
     const saved = def ? rewardSavings(def, cart) : null
     const reward = def && saved?.applies ? { name: def.name, amount: saved.amount, items: saved.items } : null
-    const best = bestOffer(cart, reward?.items.map((i) => i.key) ?? [])
-    const offer = best ? { name: best.promo.title, amount: best.amount, note: best.note } : null
-    const deliveryFee = fulfillment === 'delivery' ? DELIVERY_FEE : 0
+    let offer: Totals['offer'] = null
+    let promoProblem: string | undefined
+    if (appliedPromo && member && cart.length) {
+      const check = checkPromo(appliedPromo, subtotal, subtotal - discount, promoUses)
+      if (check.ok) offer = { name: check.promo.label, amount: check.amount, note: `${check.promo.percent}% off`, code: check.promo.code }
+      else promoProblem = `${appliedPromo} was removed: ${check.error}`
+    }
+    if (!offer) {
+      const best = bestOffer(cart, reward?.items.map((i) => i.key) ?? [])
+      offer = best ? { name: best.promo.title, amount: best.amount, note: best.note } : null
+    }
+    const deliveryFee = fulfillment === 'delivery' ? store.deliveryFee : 0
     const total = Math.max(0, subtotal - discount - (offer?.amount ?? 0) - (reward?.amount ?? 0)) + deliveryFee
-    const totals: Totals = { subtotal, reward, offer, discount, deliveryFee, total }
+    const totals: Totals = { subtotal, reward, offer, discount, deliveryFee, total, promoProblem }
 
-    const placeOrder: AppState['placeOrder'] = () => {
-      const order: PlacedOrder = {
-        number: nextNumber,
-        fulfillment,
-        address: fulfillment === 'delivery' ? addresses.find((a) => a.id === addressId) : undefined,
-        lines: cart,
-        subtotal,
-        discount,
-        deliveryFee,
-        total: totals.total,
-        payment,
-        points: Math.floor(total), // SRS AS-03: 1 pt per ₱1 paid, credited on Completed
-        rewardId: reward ? appliedReward! : undefined,
-        rewardName: reward?.name,
-        rewardDiscount: reward?.amount,
-        offerName: offer?.name,
-        offerDiscount: offer?.amount,
-      }
-      if (reward) {
-        setMyRewards((prev) => prev.map((m) => (m.rewardId === appliedReward ? { ...m, status: 'Used' } : m)))
-        setAppliedReward(null)
-      }
-      setLastOrder(order)
-      setTrackStage(0)
-      setOrderCancelled(false)
-      setNextNumber((n) => n + 1)
+    const mine = orders.filter((o) => o.customerId === CUSTOMER_ID).sort((a, b) => b.placedAt - a.placedAt)
+    const lastOrder = mine.find((o) => o.number === lastOrderNumber) ?? null
+
+    const placeOrder: AppState['placeOrder'] = (note, attemptId) => {
+      const order = createOrder(
+        {
+          customerId: CUSTOMER_ID,
+          customerName: name,
+          customerPhone: toIntlPhone(phone),
+          fulfillment,
+          address: fulfillment === 'delivery' ? addresses.find((a) => a.id === addressId) : undefined,
+          lines: cart,
+          note: note.trim() || undefined,
+          subtotal,
+          discount,
+          deliveryFee,
+          total,
+          payment,
+          points: Math.floor(total), // SRS AS-03: 1 pt per ₱1 paid, credited on Completed
+          rewardId: reward ? appliedReward! : undefined,
+          rewardName: reward?.name,
+          rewardDiscount: reward?.amount,
+          offerName: offer?.name,
+          offerDiscount: offer?.amount,
+          promoCode: offer?.code,
+          source: 'app',
+        },
+        attemptId,
+      )
+      if (reward) setAppliedReward(null)
+      if (offer?.code) setAppliedPromo(null)
+      setLastOrderNumber(order.number)
       setCart([])
       setFirstLaunch(false)
-      setActiveOrder({
-        number: order.number,
-        status: 'Received',
-        eta: fulfillment === 'delivery' ? 'Arrives in about 35 min' : 'Ready in about 10 min',
-      })
       return order
     }
 
@@ -379,8 +363,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           qty <= 0 ? prev.filter((l) => l.key !== key) : prev.map((l) => (l.key === key ? { ...l, qty } : l)),
         ),
       clearCart: () => setCart([]),
-      activeOrder,
-      setActiveOrder,
+      unavailableLines: cart.filter((l) => !productById(l.productId)?.available),
+      activeOrders: mine.filter((o) => o.status !== 'Completed' && o.status !== 'Cancelled'),
+      myOrders: mine,
       promoDismissed,
       setPromoDismissed,
       recentSearches,
@@ -397,13 +382,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       useTierDiscount,
       setUseTierDiscount,
       lastOrder,
+      setLastOrderNumber,
       placeOrder,
       notificationsOn,
       setNotificationsOn,
-      trackStage,
-      setTrackStage,
-      orderCancelled,
-      setOrderCancelled,
+      promoConsent,
+      setPromoConsent,
+      remindersOn,
+      setRemindersOn,
       paymentMethods,
       addPaymentMethod: (m, makeDefault) =>
         setPaymentMethods((prev) => {
@@ -412,53 +398,66 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             : prev
           const card = { ...m, status: makeDefault ? 'Default' : m.status }
           // Cards first, "Pay at counter" stays last.
-          return [card, ...rest]
+          return [card, ...rest.filter((p) => p.label !== m.label)]
         }),
       points,
-      setPoints,
+      setPoints: (n) => setPoints(n),
       myRewards,
       appliedReward,
       setAppliedReward,
-      restoreReward: (id) =>
-        setMyRewards((prev) => prev.map((m) => (m.rewardId === id && m.status === 'Used' ? { ...m, status: 'Redeemed' } : m))),
+      appliedPromo,
+      setAppliedPromo,
+      promoUses,
       totals,
-      redeemReward: (rewardId, cost) => {
-        setPoints((p) => p - cost)
-        setMyRewards((prev) => [{ rewardId, status: 'Redeemed' }, ...prev.filter((r) => r.rewardId !== rewardId)])
-      },
+      redeemReward: (rewardId, cost) => redeem(rewardId, cost, rewardById(rewardId)?.name ?? 'Reward'),
+      defaultSize,
+      setDefaultSize,
+      open,
+      deliveryEnabled: store.deliveryEnabled,
+      deliveryFee: store.deliveryFee,
+      prepMinutes: store.prepMinutes,
       seedCart: () => setCart(sampleLines),
-      seedDemoOrder: (f) => {
-        const sub = sampleLines.reduce((n, l) => n + l.qty * l.unitPrice, 0)
-        const discount = tierDiscount(sub)
-        const deliveryFee = f === 'delivery' ? DELIVERY_FEE : 0
-        setLastOrder({
-          number: 1042,
-          fulfillment: f,
-          address: f === 'delivery' ? addresses[0] : undefined,
-          lines: sampleLines,
-          subtotal: sub,
-          discount,
-          deliveryFee,
-          total: sub - discount + deliveryFee,
-          payment: 'Pay at counter',
-          points: 120,
+      seedDemoOrder: (f, status = 'Preparing') => {
+        // The sample order #1042 in the shared queue, in the shape a screen-index frame needs
+        quietly((s) => {
+          const o = s.orders.find((x) => x.number === 1042)
+          if (!o) return {}
+          const fee = f === 'delivery' ? s.store.deliveryFee : 0
+          const next: Order = {
+            ...o,
+            customerId: CUSTOMER_ID,
+            fulfillment: f,
+            address: f === 'delivery' ? addresses[0] : undefined,
+            deliveryFee: fee,
+            total: o.subtotal - o.discount + fee,
+            status,
+            isDelayed: false,
+            cancelReason: status === 'Cancelled' ? 'Out of stock' : undefined,
+            cancelledBy: status === 'Cancelled' ? 'cafe' : undefined,
+          }
+          return { orders: s.orders.map((x) => (x.number === 1042 ? next : x)) }
         })
+        setLastOrderNumber(1042)
       },
     }
   }, [
-    paymentMethods,
+    store,
+    orders,
     points,
     myRewards,
+    promoUses,
+    open,
+    paymentMethods,
     appliedReward,
+    appliedPromo,
     notificationsOn,
-    trackStage,
-    orderCancelled,
+    promoConsent,
+    remindersOn,
     session,
     firstLaunch,
     phone,
     name,
     cart,
-    activeOrder,
     promoDismissed,
     recentSearches,
     fulfillment,
@@ -466,8 +465,28 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     addressId,
     payment,
     useTierDiscount,
-    lastOrder,
-    nextNumber,
+    lastOrderNumber,
+    defaultSize,
+    setSession,
+    setFirstLaunch,
+    setPhone,
+    setName,
+    setCart,
+    setPromoDismissed,
+    setRecentSearches,
+    setFulfillment,
+    setAddresses,
+    setAddressId,
+    setPayment,
+    setUseTierDiscount,
+    setLastOrderNumber,
+    setNotificationsOn,
+    setPromoConsent,
+    setRemindersOn,
+    setPaymentMethods,
+    setAppliedReward,
+    setAppliedPromo,
+    setDefaultSize,
   ])
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
@@ -485,8 +504,5 @@ export function quickAddLine(productId: string): Omit<CartLine, 'key'> {
 }
 
 /** "0917 123 4567" → "+63 917 123 4567" */
-export function toIntl(phone: string) {
-  const digits = phone.replace(/\D/g, '').replace(/^0/, '')
-  if (digits.length !== 10) return phone
-  return `+63 ${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`
-}
+export const toIntl = toIntlPhone
+

@@ -1,5 +1,5 @@
 // Flow 3 — Cart, pickup or delivery, checkout (C-14, C-32, C-33, C-15, C-16)
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Content, Row, Screen, TopBar } from '../components/Screen'
 import { TextArea } from '../components/blocks'
@@ -7,6 +7,7 @@ import {
   AddressCard,
   Alert,
   CartItem,
+  ClosedBanner,
   FulfillmentDetails,
   FulfillmentSelector,
   FulfillmentSummary,
@@ -15,6 +16,7 @@ import {
   PriceBreakdown,
   lineName,
 } from '../components/order'
+import { etaLine, type CartLine } from '../state/shared'
 import { Button, Checkbox, Loader, TextField } from '../components/ui'
 import { Icon } from '../components/Icon'
 import { Lamp } from '../components/Lamp'
@@ -53,7 +55,7 @@ function EmptyCart() {
 export function Cart() {
   const navigate = useNavigate()
   const overlay = useOverlay()
-  const { cart, setQty, fulfillment, addresses, addressId } = useApp()
+  const { cart, setQty, fulfillment, addresses, addressId, open, unavailableLines } = useApp()
   const { subtotal, reward, offer, discount, deliveryFee, total } = useTotals()
   const address = addresses.find((a) => a.id === addressId)
   const hint = offerHint(cart)
@@ -65,13 +67,31 @@ export function Cart() {
       footerBorder
       topBar={<TopBar title="Your order" />}
       footer={
-        <Button className="btn--split" height={52} onClick={() => navigate('/checkout')}>
+        <Button
+          className="btn--split"
+          height={52}
+          disabled={unavailableLines.length > 0}
+          onClick={() => navigate('/checkout')}
+        >
           <span>Checkout</span>
           <span className="num">{peso(total)}</span>
         </Button>
       }
     >
       <Content>
+        {!open.open && (
+          <Row>
+            <ClosedBanner {...open} />
+          </Row>
+        )}
+        {unavailableLines.length > 0 && (
+          <Row>
+            <Alert tone="danger">
+              {unavailableLines.map(lineName).join(' and ')} {unavailableLines.length > 1 ? 'are' : 'is'} no longer
+              available. Remove {unavailableLines.length > 1 ? 'them' : 'it'} to check out.
+            </Alert>
+          </Row>
+        )}
         <Row>
           <FulfillmentSummary type={fulfillment} address={address} onChange={() => navigate('/fulfillment')} />
         </Row>
@@ -117,7 +137,7 @@ export function Cart() {
 /** C-32 Pickup or Delivery — Default (pickup) and Delivery states. */
 export function PickupOrDelivery() {
   const navigate = useNavigate()
-  const { fulfillment, setFulfillment, addresses, addressId, setAddressId } = useApp()
+  const { fulfillment, setFulfillment, addresses, addressId, setAddressId, deliveryEnabled } = useApp()
   const address = addresses.find((a) => a.id === addressId)
 
   return (
@@ -135,8 +155,13 @@ export function PickupOrDelivery() {
     >
       <Content>
         <Row>
-          <FulfillmentSelector value={fulfillment} onChange={setFulfillment} />
+          <FulfillmentSelector value={fulfillment} onChange={setFulfillment} deliveryOff={!deliveryEnabled} />
         </Row>
+        {!deliveryEnabled && (
+          <Row>
+            <Alert>Delivery is off for now. You can still order for pickup at the counter.</Alert>
+          </Row>
+        )}
         {fulfillment === 'delivery' && (
           <>
             <Row>
@@ -267,30 +292,57 @@ export function Checkout() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const app = useApp()
-  const { cart, cartCount, fulfillment, addresses, addressId, payment, session, useTierDiscount, placeOrder } = app
-  const { subtotal, reward, offer, discount, deliveryFee, total } = useTotals()
+  const { cart, cartCount, fulfillment, addresses, addressId, payment, session, useTierDiscount, placeOrder, open, unavailableLines } =
+    app
+  const { subtotal, reward, offer, discount, deliveryFee, total, promoProblem } = useTotals()
   const overlay = useOverlay()
   const [note, setNote] = useState('')
   const [processing, setProcessing] = useState(params.get('state') === 'processing')
+  const [paymentError, setPaymentError] = useState(false)
+  const paymentRow = useRef<HTMLDivElement>(null)
+  // One id per checkout: a retry or a double tap re-sends the same id and never makes a second order
+  const attempt = useRef(`attempt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`)
   const address = addresses.find((a) => a.id === addressId)
+  const blocked = !open.open || unavailableLines.length > 0
 
   if (cart.length === 0 && !processing) return <EmptyCart />
 
-  const submit = async () => {
+  const submit = async (retry = false): Promise<void> => {
     if (session !== 'member') {
       overlay.open('login-to-order')
       return
     }
-    if (app.lastOrder && Date.now() - lastPlacedAt < 2 * 60 * 1000) {
+    if (blocked) return
+    // FR-CHK-07: no payment method → the row shows an error and scrolls into view
+    if (!payment) {
+      setPaymentError(true)
+      paymentRow.current?.scrollIntoView({ block: 'center' })
+      return
+    }
+    // FR-CHK-09: the same cart ordered in the last 5 minutes
+    const last = app.lastOrder
+    if (!retry && last && last.status !== 'Cancelled' && Date.now() - last.placedAt < 5 * 60 * 1000 && sameCart(last.lines, cart)) {
       const go = await overlay.confirm('similar-order')
       if (!go) return
     }
     setProcessing(true)
-    setTimeout(() => {
-      placeOrder(note)
-      lastPlacedAt = Date.now()
-      navigate('/order-confirmation', { replace: true })
-    }, 1400)
+    await new Promise((r) => setTimeout(r, 1400))
+    // Demo test cards (README): 0002 is always declined; 0119 is charged, then placing the order fails once
+    if (payment === DECLINED_CARD) {
+      setProcessing(false)
+      const again = await overlay.confirm('payment-declined')
+      if (again) return submit(true)
+      overlay.open('payment')
+      return
+    }
+    if (payment === FAILS_ONCE_CARD && !failedAttempts.has(attempt.current)) {
+      failedAttempts.add(attempt.current)
+      setProcessing(false)
+      if (await overlay.confirm('order-failed')) return submit(true)
+      return
+    }
+    placeOrder(note, attempt.current)
+    navigate('/order-confirmation', { replace: true })
   }
 
   return (
@@ -299,8 +351,8 @@ export function Checkout() {
       topBar={<TopBar title="Checkout" />}
       footer={
         <Button
-          onClick={submit}
-          disabled={processing}
+          onClick={() => submit()}
+          disabled={processing || blocked}
           aria-busy={processing}
           className={`btn--processing ${processing ? '' : 'btn--split'}`}
           height={52}
@@ -318,6 +370,24 @@ export function Checkout() {
       overlay={processing && <div className="processing-scrim" aria-hidden />}
     >
       <Content>
+        {!open.open && (
+          <Row>
+            <ClosedBanner {...open} />
+          </Row>
+        )}
+        {unavailableLines.length > 0 && (
+          <Row>
+            <Alert tone="danger">
+              {unavailableLines.map(lineName).join(' and ')} {unavailableLines.length > 1 ? 'are' : 'is'} no longer
+              available. Go back to your cart to remove {unavailableLines.length > 1 ? 'them' : 'it'}.
+            </Alert>
+          </Row>
+        )}
+        {promoProblem && (
+          <Row>
+            <Alert tone="warning">{promoProblem}</Alert>
+          </Row>
+        )}
         <Row>
           <FulfillmentSummary type={fulfillment} address={address} onChange={() => navigate('/fulfillment')} />
         </Row>
@@ -337,23 +407,34 @@ export function Checkout() {
           </section>
         </Row>
         <Row>
-          <div className="card options-card">
+          <div className={`card options-card ${paymentError ? 'options-card--error' : ''}`} ref={paymentRow}>
             <OptionRow
               icon="tag"
               label="Discount & rewards"
               value={
                 session !== 'member'
                   ? 'Log in to use'
-                  : reward
-                    ? reward.name
-                    : useTierDiscount
-                      ? 'Regular discount'
-                      : 'None'
+                  : [offer?.code, reward?.name].filter(Boolean).join(' · ') ||
+                    (useTierDiscount ? 'Regular discount' : 'None')
               }
               onClick={() => overlay.open('discounts')}
             />
-            <OptionRow icon="card" label="Payment method" value={payment} onClick={() => overlay.open('payment')} />
+            <OptionRow
+              icon="card"
+              label="Payment method"
+              value={payment || 'Choose a method'}
+              onClick={() => {
+                setPaymentError(false)
+                overlay.open('payment')
+              }}
+            />
           </div>
+          {paymentError && (
+            <p className="field__error t-caption" role="alert">
+              <Icon name="alert" size={16} />
+              Choose how you'll pay.
+            </p>
+          )}
         </Row>
         <Row>
           <TextArea
@@ -372,7 +453,21 @@ export function Checkout() {
   )
 }
 
-let lastPlacedAt = 0
+/** Demo test cards (see the README) */
+export const DECLINED_CARD = 'Card ending 0002'
+export const FAILS_ONCE_CARD = 'Card ending 0119'
+/** Attempts whose first try already "failed" with the 0119 card: the retry goes through */
+const failedAttempts = new Set<string>()
+
+/** Same items, options, notes and quantities, in any order */
+const sameCart = (a: CartLine[], b: CartLine[]) => {
+  const sig = (lines: CartLine[]) =>
+    lines
+      .map((l) => `${l.productId}|${l.options.join(',')}|${l.note}|${l.qty}`)
+      .sort()
+      .join(';')
+  return sig(a) === sig(b)
+}
 
 /** C-16 Order Confirmation — Default (pickup) and Delivery. */
 export function OrderConfirmation() {
@@ -385,7 +480,11 @@ export function OrderConfirmation() {
     <Screen
       footer={
         <>
-          <Button onClick={() => navigate('/orders/tracking', { replace: true })}>Track order</Button>
+          <Button
+            onClick={() => navigate(lastOrder ? `/orders/tracking?n=${lastOrder.number}` : '/orders/tracking', { replace: true })}
+          >
+            Track order
+          </Button>
           <Button variant="secondary" onClick={() => navigate('/menu', { replace: true })}>
             Back to menu
           </Button>
@@ -403,7 +502,7 @@ export function OrderConfirmation() {
           </div>
         </header>
         <div className="confirmation__details">
-          <FulfillmentDetails type={type} address={address} />
+          <FulfillmentDetails type={type} address={address} status={lastOrder ? etaLine(lastOrder) : undefined} />
         </div>
         {lastOrder && (
           <section className="card confirmation__items" aria-labelledby="conf-items">

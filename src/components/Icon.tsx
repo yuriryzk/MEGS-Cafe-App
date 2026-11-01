@@ -155,6 +155,39 @@ const paths = {
   ),
   minus: <path d="M6 12h12" />,
   plus: <path d="M12 6v12M6 12h12" />,
+  refresh: (
+    <>
+      <path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3" />
+      <path d="M19.5 4.5v4h-4" />
+    </>
+  ),
+  offline: (
+    <>
+      <path d="M4 9a12 12 0 0 1 4.5-2.6M12 6a12 12 0 0 1 8 3M7 12.5a7 7 0 0 1 3-1.5M14.5 11.4A7 7 0 0 1 17 12.5" />
+      <path d="M10.3 16a2.5 2.5 0 0 1 3.4 0M12 19.5v.1M4 4l16 16" />
+    </>
+  ),
+  grid: (
+    <>
+      <rect x="4" y="4" width="7" height="7" rx="1" />
+      <rect x="13" y="4" width="7" height="7" rx="1" />
+      <rect x="4" y="13" width="7" height="7" rx="1" />
+      <rect x="13" y="13" width="7" height="7" rx="1" />
+    </>
+  ),
+  repeat: (
+    <>
+      <path d="M4.5 11V9.5a3 3 0 0 1 3-3h12M16.5 3.5l3 3-3 3" />
+      <path d="M19.5 13v1.5a3 3 0 0 1-3 3h-12M7.5 20.5l-3-3 3-3" />
+    </>
+  ),
+  message: <path d="M4.5 5.5h15v10h-9l-4.5 3.5v-3.5H4.5z" />,
+  edit: (
+    <>
+      <path d="M14.5 5.5l4 4L9 19H5v-4z" />
+      <path d="M12.5 7.5l4 4" />
+    </>
+  ),
 }
 
 export type IconName = keyof typeof paths

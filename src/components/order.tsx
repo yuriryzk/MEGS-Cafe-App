@@ -1,22 +1,23 @@
 // Order-related blocks: fulfillment, cart lines, price rows, alerts, and the conduit tracker.
 import type { ReactNode } from 'react'
 import { peso } from '../data/menu'
-import type { Address, CartLine, Fulfillment } from '../state/AppState'
+import { DELIVERY_MINUTES, getShared, type Address, type CartLine, type Fulfillment } from '../state/shared'
 import { productById } from '../data/menu'
 import { ProductThumb, Stepper } from './blocks'
 import { Icon, type IconName } from './Icon'
 import { Lamp } from './Lamp'
 import './order.css'
 
-const PICKUP_ETA = 'Ready in about 10 min'
-const DELIVERY_ETA = 'Arrives in about 35 min'
-export const etaFor = (f: Fulfillment) => (f === 'delivery' ? DELIVERY_ETA : PICKUP_ETA)
+/** Before an order exists: pickup takes the cafe's default preparation time (FR-OPS-03) */
+export const etaFor = (f: Fulfillment) =>
+  f === 'delivery' ? `Arrives in about ${DELIVERY_MINUTES} min` : `Ready in about ${getShared().store.prepMinutes} min`
 
 /** "Medium · 16 oz", "Hot", "Oat milk", "50%" → "Medium · Hot · Oat milk · 50% sugar" */
 export function formatOptions(options: string[]) {
   return options
     .map((o) => {
       if (/ · \d+ oz$/.test(o)) return o.replace(' · ', ' ')
+      if (/^\d+%$/.test(o)) return `${o} sugar`
       return o
     })
     .join(' · ')
@@ -147,12 +148,13 @@ export function StatusBadge({
 export function StatusStepper({
   steps,
   current,
-  time = '10:42 AM',
+  times = [],
   dark = false,
 }: {
   steps: string[]
   current: number
-  time?: string
+  /** When each reached step happened (FR-TRK-01) */
+  times?: (string | undefined)[]
   /** Set on the black tracker panel */
   dark?: boolean
 }) {
@@ -168,7 +170,7 @@ export function StatusStepper({
             </span>
             <span className="conduit__text">
               <span className={state === 'lit' ? 't-h3' : 't-body'}>{s}</span>
-              {state !== 'off' && <span className="t-caption conduit__time num">{time}</span>}
+              {state !== 'off' && times[i] && <span className="t-caption conduit__time num">{times[i]}</span>}
             </span>
           </li>
         )
@@ -234,17 +236,22 @@ export function OrderCard({
 export function FulfillmentSelector({
   value,
   onChange,
+  deliveryOff = false,
 }: {
   value: Fulfillment
   onChange: (f: Fulfillment) => void
+  /** FR-OPS-05: the cafe has turned delivery off */
+  deliveryOff?: boolean
 }) {
   const seg = (type: Fulfillment, label: string) => {
     const on = value === type
+    const off = type === 'delivery' && deliveryOff
     return (
       <button
         className={`fulfillment-seg ${on ? 'is-selected' : ''}`}
         role="radio"
         aria-checked={on}
+        disabled={off}
         onClick={() => onChange(type)}
       >
         <span className="fulfillment-seg__head">
@@ -252,7 +259,7 @@ export function FulfillmentSelector({
           <span className="t-h3">{label}</span>
           {on && <Icon name="check" size={18} color="var(--gold)" />}
         </span>
-        <span className="t-body-sm fulfillment-seg__eta">{etaFor(type)}</span>
+        <span className="t-body-sm fulfillment-seg__eta">{off ? 'Not available right now' : etaFor(type)}</span>
       </button>
     )
   }
@@ -324,6 +331,12 @@ export function CartItem({
         </span>
         {opts && <span className="t-body-sm muted">{opts}</span>}
         {line.note && <span className="t-body-sm muted">Note: {line.note}</span>}
+        {product && !product.available && !readOnly && (
+          <span className="cart-item__gone t-body-sm">
+            <Icon name="alert" size={16} />
+            No longer available. Remove it to check out.
+          </span>
+        )}
         {!readOnly && (
           <span className="cart-item__controls">
             <Stepper size="S" value={line.qty} min={0} onChange={(q) => onQty?.(q)} />
@@ -386,9 +399,13 @@ export function PriceBreakdown({
     <div className="price-breakdown">
       <PriceRow label="Subtotal" amount={peso(subtotal)} />
       {discount > 0 && <DiscountRow amount={discount} />}
-      {offer && <DiscountRow label={offer.name} note={offer.note} amount={offerOff} />}
+      {offer && <DiscountRow label={offer.name} note={offer.note || undefined} amount={offerOff} />}
       {reward && (
-        <DiscountRow label={reward.name} note={`${reward.items.map((i) => i.name).join(' and ')} free`} amount={rewardOff} />
+        <DiscountRow
+          label={reward.name}
+          note={reward.items.length ? `${reward.items.map((i) => i.name).join(' and ')} free` : undefined}
+          amount={rewardOff}
+        />
       )}
       {deliveryFee > 0 && <PriceRow label="Delivery fee" amount={peso(deliveryFee)} />}
       <PriceRow total label="Total" amount={peso(Math.max(0, subtotal - discount - offerOff - rewardOff) + deliveryFee)} />
@@ -412,6 +429,35 @@ export function Alert({
       <Icon name={icon} size={20} />
       <span className="t-body-sm alert__text">{children}</span>
       {action}
+    </div>
+  )
+}
+
+/** Feedback / Offline — one banner with Retry; what is saved on the phone stays visible under it */
+export function OfflineBanner({ children, onRetry }: { children?: ReactNode; onRetry: () => void }) {
+  return (
+    <div className="alert alert--warning offline-banner" role="status">
+      <Icon name="offline" size={20} />
+      <span className="t-body-sm alert__text">{children ?? "You're offline. Showing what's saved on this phone."}</span>
+      <button className="t-body-sm link-text offline-banner__retry" onClick={onRetry}>
+        Retry
+      </button>
+    </div>
+  )
+}
+
+/** Feedback / Closed — the cafe isn't taking orders: today's hours and the next opening time */
+export function ClosedBanner({ why, today, next }: { why?: 'paused' | 'hours'; today: string; next?: string }) {
+  return (
+    <div className="alert alert--warning closed-banner" role="status">
+      <Icon name="clock" size={20} />
+      <span className="alert__text closed-banner__text">
+        <span className="t-button">{why === 'paused' ? "We're not taking orders right now" : "We're closed right now"}</span>
+        <span className="t-body-sm">
+          {today}
+          {next ? ` · ${next}` : ''}. You can still browse and fill your cart.
+        </span>
+      </span>
     </div>
   )
 }

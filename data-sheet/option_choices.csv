@@ -2,6 +2,11 @@
 size,Cold · 16 oz,,price_cold_16oz,,yes,yes,1
 size,Cold · 22 oz,,price_cold_22oz,,no,yes,2
 size,Hot · 12 oz,,price_hot_12oz,,no,yes,3
+sugar,100%,0,,,yes,yes,1
+sugar,75%,0,,,no,yes,2
+sugar,50%,0,,,no,yes,3
+sugar,25%,0,,,no,yes,4
+sugar,0%,0,,,no,yes,5
 milk,Regular milk,0,,,yes,yes,1
 milk,Oat milk,50,,,no,yes,2
 add-ons,Espresso shot,30,,,no,yes,1

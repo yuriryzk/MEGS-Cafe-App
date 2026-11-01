@@ -8,8 +8,9 @@ import { Button, Photo, TextField } from '../components/ui'
 import { Icon } from '../components/Icon'
 import counterPhoto from '../assets/photos/counter-cup-meal.webp'
 import { peso, productById } from '../data/menu'
-import { featuredPromotion, freeItemsLine, rewardById, rewardSavings } from '../data/rewards'
+import { checkPromo, featuredPromotion, freeItemsLine, rewardById, rewardSavings } from '../data/rewards'
 import { COUNTER, quickAddLine, tierDiscount, useApp } from '../state/AppState'
+import { deleteCustomerData } from '../state/shared'
 import './overlays.css'
 
 export type OverlayId =
@@ -27,15 +28,22 @@ export type OverlayId =
   | 'order-updates'
   | 'logout'
   | 'remove-item'
+  | 'payment-declined'
+  | 'order-failed'
+  | 'delete-account'
 
 type Payload = Record<string, unknown>
 type Current = { id: OverlayId; data: Payload; resolve?: (ok: boolean) => void }
+
+type ToastAction = { label: string; onClick: () => void }
 
 type OverlayApi = {
   open: (id: OverlayId, data?: Payload) => void
   /** Opens a dialog and resolves true when the user takes the primary action. */
   confirm: (id: OverlayId, data?: Payload) => Promise<boolean>
   close: () => void
+  /** A short message over the top of the screen (status changes, "Account deleted") */
+  toast: (text: string, action?: ToastAction) => void
 }
 
 const Ctx = createContext<OverlayApi | null>(null)
@@ -48,6 +56,13 @@ export function useOverlay() {
 
 export function OverlayHost({ children }: { children: ReactNode }) {
   const [current, setCurrent] = useState<Current | null>(null)
+  const [toastState, setToast] = useState<{ text: string; action?: ToastAction; id: number } | null>(null)
+  const toast = useCallback((text: string, action?: ToastAction) => setToast({ text, action, id: Date.now() }), [])
+  useEffect(() => {
+    if (!toastState) return
+    const t = setTimeout(() => setToast(null), toastState.action ? 5000 : 4000)
+    return () => clearTimeout(t)
+  }, [toastState])
 
   const close = useCallback(() => {
     setCurrent((c) => {
@@ -78,7 +93,7 @@ export function OverlayHost({ children }: { children: ReactNode }) {
   // Overlays render into the phone frame (#phone) so they never cover the prototype chrome.
   const target = typeof document !== 'undefined' ? document.getElementById('phone') : null
 
-  const api = useMemo(() => ({ open, confirm, close }), [open, confirm, close])
+  const api = useMemo(() => ({ open, confirm, close, toast }), [open, confirm, close, toast])
 
   return (
     <Ctx.Provider value={api}>
@@ -89,6 +104,25 @@ export function OverlayHost({ children }: { children: ReactNode }) {
           <div className="overlay-root">
             <div className="overlay-scrim" onClick={close} aria-hidden />
             <OverlayContent current={current} close={close} accept={accept} open={open} />
+          </div>,
+          target,
+        )}
+      {toastState &&
+        target &&
+        createPortal(
+          <div className="app-toast" role="status" key={toastState.id}>
+            <span className="t-body app-toast__text">{toastState.text}</span>
+            {toastState.action && (
+              <button
+                className="t-button app-toast__action"
+                onClick={() => {
+                  toastState.action!.onClick()
+                  setToast(null)
+                }}
+              >
+                {toastState.action.label}
+              </button>
+            )}
           </div>,
           target,
         )}
@@ -337,16 +371,17 @@ function OverlayContent({
       )
 
     /* O-10 You placed a similar order 2 minutes ago */
-    case 'similar-order':
+    case 'similar-order': {
+      const mins = app.lastOrder ? Math.max(1, Math.round((Date.now() - app.lastOrder.placedAt) / 60000)) : 2
       return (
         <Dialog
-          title="You placed a similar order 2 minutes ago"
+          title={`You placed the same order ${mins} minute${mins === 1 ? '' : 's'} ago`}
           actions={
             <>
               <Button
                 onClick={() => {
                   close()
-                  navigate('/orders/tracking')
+                  navigate(app.lastOrder ? `/orders/tracking?n=${app.lastOrder.number}` : '/orders/tracking')
                 }}
               >
                 View order
@@ -364,6 +399,7 @@ function OverlayContent({
           )}
         </Dialog>
       )
+    }
 
     /* O-11 Get order updates */
     case 'order-updates':
@@ -401,6 +437,73 @@ function OverlayContent({
           }
         >
           <p className="t-body muted">It will be taken out of your order.</p>
+        </Dialog>
+      )
+
+    /* O-13 Payment didn't go through (3.2.4.5) */
+    case 'payment-declined':
+      return (
+        <Dialog
+          title="Payment didn't go through"
+          actions={
+            <>
+              <Button onClick={accept}>Retry</Button>
+              <Button variant="secondary" onClick={close}>
+                Change method
+              </Button>
+            </>
+          }
+        >
+          <p className="t-body muted">You haven't been charged. Your cart is just as you left it.</p>
+        </Dialog>
+      )
+
+    /* O-14 We couldn't place your order (3.2.4.5) — Retry re-sends the same attempt, never a second order */
+    case 'order-failed':
+      return (
+        <Dialog
+          title="We couldn't place your order"
+          actions={
+            <>
+              <Button onClick={accept}>Retry</Button>
+              <Button variant="secondary" onClick={close}>
+                Not now
+              </Button>
+            </>
+          }
+        >
+          <p className="t-body muted">You haven't been charged. Retrying is safe: it can't place the order twice.</p>
+        </Dialog>
+      )
+
+    /* O-15 Delete account? (FR-ACC-11) */
+    case 'delete-account':
+      return (
+        <Dialog
+          title="Delete your account?"
+          actions={
+            <>
+              <Button
+                variant="danger"
+                onClick={() => {
+                  close()
+                  deleteCustomerData()
+                  window.location.replace(window.location.pathname + '#/welcome?deleted=1')
+                  window.location.reload()
+                }}
+              >
+                Delete account
+              </Button>
+              <Button variant="secondary" onClick={close}>
+                Keep my account
+              </Button>
+            </>
+          }
+        >
+          <p className="t-body muted">
+            This erases your profile, saved addresses and payment methods, your cart, your{' '}
+            {app.points.toLocaleString('en-PH')} points and unused rewards, and your notifications. It can't be undone.
+          </p>
         </Dialog>
       )
 
@@ -478,6 +581,16 @@ function DiscountsSheet({ close }: { close: () => void }) {
   const [choice, setChoice] = useState<string | null>(app.appliedReward)
   const [code, setCode] = useState('')
   const [error, setError] = useState('')
+  const applied = app.totals.offer?.code
+  const tier = member && app.useTierDiscount ? tierDiscount(app.cartTotal) : 0
+  const applyCode = () => {
+    // SRS FR-PRO-08: date window, minimum spend and usage limit (the server checks this in the full system)
+    const check = checkPromo(code, app.cartTotal, app.cartTotal - tier, app.promoUses)
+    if (!check.ok) return setError(check.error)
+    app.setAppliedPromo(check.promo.code)
+    setCode('')
+    setError('')
+  }
   const usable = app.myRewards.filter((m) => m.status === 'Redeemed')
   const expired = app.myRewards.filter((m) => m.status === 'Expired')
 
@@ -489,7 +602,7 @@ function DiscountsSheet({ close }: { close: () => void }) {
       ) : (
         <p className="t-body-sm muted">Log in to get your Regular discount.</p>
       )}
-      {app.totals.offer && (
+      {app.totals.offer && !applied && (
         <div className="offer-applied">
           <span className="t-body">{app.totals.offer.name}</span>
           <span className="t-price num">−{peso(app.totals.offer.amount)}</span>
@@ -531,7 +644,19 @@ function DiscountsSheet({ close }: { close: () => void }) {
       })}
       <hr className="divider" />
       <h3 className="t-h3">Promo code</h3>
-      <div className="promo-row">
+      {applied ? (
+        <div className="offer-applied">
+          <span className="t-body">{app.totals.offer!.name}</span>
+          <span className="t-price num">−{peso(app.totals.offer!.amount)}</span>
+          <span className="t-body-sm muted">
+            One promotion per order: the code replaces the automatic offer.{' '}
+            <button className="link-text t-body-sm" onClick={() => app.setAppliedPromo(null)}>
+              Remove code
+            </button>
+          </span>
+        </div>
+      ) : (
+        <div className="promo-row">
         <TextField
           label="Code"
           placeholder="Enter code"
@@ -546,12 +671,16 @@ function DiscountsSheet({ close }: { close: () => void }) {
           variant="secondary"
           height={48}
           full={false}
-          disabled={!code}
-          onClick={() => setError(code === 'MEGS10' ? '' : "This code isn't valid")}
+          disabled={!code.trim() || !member}
+          onClick={applyCode}
         >
           Apply
         </Button>
-      </div>
+        </div>
+      )}
+      {!applied && app.totals.offer && (
+        <p className="t-body-sm muted">One promotion per order: a code replaces {app.totals.offer.name}.</p>
+      )}
       <Button
         onClick={() => {
           app.setUseTierDiscount(true)

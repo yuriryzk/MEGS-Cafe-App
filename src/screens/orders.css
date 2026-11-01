@@ -44,3 +44,14 @@
   border-radius: var(--radius-card);
 }
 .orders-empty .btn { margin-top: var(--space-8); }
+
+/* Pull to refresh (FR-TRK-02) */
+.ptr { min-height: 100%; }
+.ptr__spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: var(--muted);
+}
+.track-updated { text-align: right; }

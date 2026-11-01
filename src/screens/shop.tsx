@@ -25,7 +25,7 @@ import { Content, Row, Screen, TopBar, TopBarAction } from '../components/Screen
 import { Badge, ProductThumb } from '../components/blocks'
 import { Icon } from '../components/Icon'
 import { Button, Checkbox, Photo } from '../components/ui'
-import { FulfillmentSummary } from '../components/order'
+import { ClosedBanner, FulfillmentSummary, OfflineBanner } from '../components/order'
 import interiorPhoto from '../assets/photos/interior-banquette.webp'
 import lattesPhoto from '../assets/photos/iced-lattes-banquette.webp'
 import cupsPhoto from '../assets/photos/ube-choco-matcha-cups.webp'
@@ -47,6 +47,8 @@ import {
 import { useOverlay } from '../overlays/OverlayHost'
 import { featuredPromotion, nextReward } from '../data/rewards'
 import { useApp } from '../state/AppState'
+import { retryConnection, useOnline } from '../state/online'
+import { etaLine, stepLabel } from '../state/shared'
 import './shop.css'
 
 /** Shared handler for product rows: the whole row opens the product page, where options are chosen. */
@@ -83,7 +85,9 @@ let promoShown = false
 export function Home() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
-  const { session, name, firstLaunch, activeOrder, promoDismissed, setPromoDismissed, addToCart, points } = useApp()
+  const { session, name, firstLaunch, activeOrders, promoDismissed, setPromoDismissed, addToCart, points, open: shop } = useApp()
+  const online = useOnline()
+  const activeOrder = activeOrders[0]
   const { open } = useProductActions()
   const overlay = useOverlay()
   const forcedLoading = params.get('state') === 'loading'
@@ -145,13 +149,23 @@ export function Home() {
       overlay={<LiveCartBar />}
     >
       <Content>
+        {!online && (
+          <Row>
+            <OfflineBanner onRetry={retryConnection}>You're offline. The menu below is the one saved on this phone.</OfflineBanner>
+          </Row>
+        )}
         {!loading && showOrderStuff && activeOrder && (
           <Row>
             <ActiveOrderChip
-              status={`${activeOrder.status} · Order #${activeOrder.number}`}
-              eta={activeOrder.eta}
-              onClick={() => navigate('/orders/tracking')}
+              status={`${activeOrder.isDelayed ? 'Delayed' : stepLabel(activeOrder, activeOrder.status)} · Order #${activeOrder.number}`}
+              eta={etaLine(activeOrder)}
+              onClick={() => navigate(`/orders/tracking?n=${activeOrder.number}`)}
             />
+          </Row>
+        )}
+        {!shop.open && (
+          <Row>
+            <ClosedBanner {...shop} />
           </Row>
         )}
 
@@ -261,7 +275,8 @@ export function Menu() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const { open } = useProductActions()
-  const { fulfillment, addresses, addressId } = useApp()
+  const { fulfillment, addresses, addressId, open: shop } = useApp()
+  const online = useOnline()
   const address = addresses.find((a) => a.id === addressId)
   const all = railSections.flatMap((g) => g.items)
   const [active, setActive] = useState<Section>(all[0].id)
@@ -326,6 +341,8 @@ export function Menu() {
       bodyClassName="menu-split"
     >
       <div className="menu-split__where">
+        {!online && <OfflineBanner onRetry={retryConnection}>You're offline. This is the menu saved on this phone.</OfflineBanner>}
+        {!shop.open && <ClosedBanner {...shop} />}
         <FulfillmentSummary type={fulfillment} address={address} onChange={() => navigate('/fulfillment')} />
       </div>
       <div className="menu-split__cols">
@@ -540,8 +557,14 @@ export function Search() {
 export function ProductDetail() {
   const { id = '' } = useParams()
   const [params] = useSearchParams()
+  // A fresh page per item (and per edited line), so one item's choices never carry over to the next
+  return <ProductPage key={`${id}|${params.get('edit') ?? ''}`} id={id} />
+}
+
+function ProductPage({ id }: { id: string }) {
+  const [params] = useSearchParams()
   const navigate = useNavigate()
-  const { addToCart, updateLine, cart } = useApp()
+  const { addToCart, updateLine, cart, defaultSize } = useApp()
   const product = productById(id)
   const editing = cart.find((l) => l.key === params.get('edit') && l.productId === id)
 
@@ -555,7 +578,9 @@ export function ProductDetail() {
       groups
         .filter((g) => g.pick === 'one')
         .map((g) => {
-          if (!editing) return [g.id, defaultChoice(g)]
+          // FR-CRT-05: the customer's saved drink size when this item comes in it, else the sheet's default
+          const saved = g.id === 'size' ? g.choices.findIndex((c) => c.label === defaultSize) : -1
+          if (!editing) return [g.id, saved >= 0 ? saved : defaultChoice(g)]
           const i = g.choices.findIndex((c) => editing.options.includes(c.label))
           return [g.id, i < 0 ? null : i]
         }),

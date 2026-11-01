@@ -19,9 +19,26 @@ import {
 } from '../data/rewards'
 import { useOverlay } from '../overlays/OverlayHost'
 import { useApp } from '../state/AppState'
+import { useShared } from '../state/shared'
 import './rewards.css'
 
 const fmt = (n: number) => n.toLocaleString('en-PH')
+
+/** Points credited or spent in the app (newest first), then the older history */
+function useActivity(): Activity[] {
+  const { pointsLog } = useShared()
+  const live = pointsLog.map((e) => {
+    const d = new Date(e.at)
+    return {
+      id: e.id,
+      description: e.description,
+      date: d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'Asia/Manila' }),
+      month: d.toLocaleDateString('en-PH', { month: 'long', timeZone: 'Asia/Manila' }),
+      points: e.points,
+    }
+  })
+  return [...live, ...activity]
+}
 
 /** Progress / Tier */
 function TierProgress({ label, value }: { label: string; value: number }) {
@@ -111,6 +128,7 @@ function useRewardState() {
 export function Rewards() {
   const navigate = useNavigate()
   const { points, myRewards } = useApp()
+  const recent = useActivity()
   const stateOf = useRewardState()
   const unused = myRewards.filter((r) => r.status === 'Redeemed').length
 
@@ -169,7 +187,7 @@ export function Rewards() {
         </Row>
         <Row>
           <div className="activity-group">
-            {activity.slice(0, 3).map((a) => (
+            {recent.slice(0, 3).map((a) => (
               <ActivityRow key={a.id} item={a} />
             ))}
           </div>
@@ -353,7 +371,8 @@ function MissingItem({ title }: { title: string }) {
 /** C-23 Points Activity — All / Earned / Redeemed chips, grouped by month. */
 export function PointsActivity() {
   const [filter, setFilter] = useState<'All' | 'Earned' | 'Redeemed'>('All')
-  const items = activity.filter(
+  const all = useActivity()
+  const items = all.filter(
     (a) => filter === 'All' || (filter === 'Earned' ? a.points > 0 : a.points < 0),
   )
   const months = [...new Set(items.map((a) => a.month))]

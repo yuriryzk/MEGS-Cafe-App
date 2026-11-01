@@ -22,7 +22,7 @@ function parseCsv(text: string): Row[] {
   let row: string[] = []
   let cell = ''
   let quoted = false
-  const src = text.replace(/^﻿/, '')
+  const src = text.replace(/^\uFEFF/, '')
   for (let i = 0; i < src.length; i++) {
     const ch = src[i]
     if (quoted) {
@@ -153,10 +153,19 @@ export const products: Product[] = parseCsv(productsCsv)
   .sort(bySort)
   .map(toProduct)
 
-/** Items off the menu today — reordering them triggers O-08 "Some items aren't available". */
-export const unavailableToday = products.filter((p) => !p.available).map((p) => p.id)
+/** Availability as printed on the sheet, before staff mark anything sold out */
+const sheetAvailable = new Map(products.map((p) => [p.id, p.available]))
+
+/** SRS FR-OPS-04: staff overrides (A-10 Item availability) laid over the sheet. Called by the shared
+ *  store whenever its settings change, so every screen reads `product.available` as it is right now. */
+export function applyAvailability(overrides: Record<string, { available: boolean }>) {
+  for (const p of products) p.available = overrides[p.id]?.available ?? sheetAvailable.get(p.id) ?? true
+}
 
 export const productById = (id: string) => products.find((p) => p.id === id)
+
+/** Items off the menu right now — reordering them triggers O-08 "Some items aren't available". */
+export const isUnavailable = (id: string) => !productById(id)?.available
 export const sectionById = (id: string) => sections.find((s) => s.id === id)
 export const productsIn = (id: Section) => {
   const s = sectionById(id)

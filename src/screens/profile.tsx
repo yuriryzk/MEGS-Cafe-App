@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { BottomNav } from '../components/blocks'
 import { AddressCard, Alert } from '../components/order'
 import { Content, Row, Screen, TopBar } from '../components/Screen'
-import { Button, Checkbox, LogoMark, TextField } from '../components/ui'
+import { Button, Checkbox, LogoMark, TextField, Toggle } from '../components/ui'
 import { Icon, type IconName } from '../components/Icon'
 
 /** One plain outline icon per settings row, by what the row opens. */
@@ -27,8 +27,8 @@ const rowIcons: Record<string, IconName> = {
   'Pay at counter': 'store',
 }
 import { useOverlay } from '../overlays/OverlayHost'
-import { featuredPromotion } from '../data/rewards'
-import { resetDemo, useApp } from '../state/AppState'
+import { DRINK_SIZES, resetDemo, useApp } from '../state/AppState'
+import { customerDataExport, markNoteRead, useShared, type CustomerNote } from '../state/shared'
 import './profile.css'
 
 /** Row / Settings — icon, label, optional value, chevron. Renders as a button only when it does something. */
@@ -162,11 +162,11 @@ function Toast({ children }: { children: ReactNode }) {
 /** C-28 Edit Profile — Default and Saved. */
 export function EditProfile() {
   const [params] = useSearchParams()
-  const { name, setName, phone } = useApp()
+  const { name, setName, phone, defaultSize, setDefaultSize } = useApp()
   const [draft, setDraft] = useState(name)
   const [email, setEmail] = useState('maria.santos@gmail.com')
   const [birthday, setBirthday] = useState('')
-  const [size, setSize] = useState('Medium')
+  const [size, setSize] = useState(defaultSize)
   const [cafe, setCafe] = useState("MEGS' Cafe")
   const [saved, setSaved] = useState(params.get('state') === 'saved')
 
@@ -185,6 +185,7 @@ export function EditProfile() {
           disabled={!draft.trim()}
           onClick={() => {
             setName(draft.trim())
+            setDefaultSize(size)
             setSaved(true)
           }}
         >
@@ -216,7 +217,24 @@ export function EditProfile() {
           <p className="t-caption muted">Saved preferences</p>
         </Row>
         <Row>
-          <TextField label="Default drink size" value={size} onChange={(e) => setSize(e.target.value)} />
+          {/* FR-CRT-05 / FR-PRF-02: preselected on product pages when the drink comes in this size */}
+          <div className="field">
+            <label htmlFor="f-default-size" className="t-body-sm">
+              Default drink size
+            </label>
+            <div className="field__input field__input--select">
+              <select id="f-default-size" className="t-body" value={size} onChange={(e) => setSize(e.target.value)}>
+                <option value="">No preference</option>
+                {DRINK_SIZES.map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
+              </select>
+              <Icon name="chevron" size={20} color="var(--muted)" style={{ transform: 'rotate(90deg)' }} />
+            </div>
+            <p className="t-caption muted">Picked for you on drinks that come in this size</p>
+          </div>
         </Row>
         <Row>
           <TextField label="Favorite cafe" value={cafe} onChange={(e) => setCafe(e.target.value)} />
@@ -226,43 +244,28 @@ export function EditProfile() {
   )
 }
 
-/** Toggle */
-function Toggle({
-  label,
-  description,
-  on,
-  onChange,
-}: {
-  label: string
-  description: string
-  on: boolean
-  onChange: (v: boolean) => void
-}) {
-  return (
-    <label className="toggle">
-      <span className="toggle__text">
-        <span className="t-body">{label}</span>
-        <span className="t-body-sm muted">{description}</span>
-      </span>
-      <input type="checkbox" role="switch" checked={on} onChange={(e) => onChange(e.target.checked)} />
-      <span className={`toggle__track ${on ? 'is-on' : ''}`} aria-hidden>
-        <span />
-      </span>
-    </label>
-  )
-}
+/** Notification permission as the phone reports it ("denied" = turned off in phone settings) */
+const permission = () => (typeof Notification === 'undefined' ? 'unsupported' : Notification.permission)
 
 /** C-29 Settings */
 export function Settings() {
+  const navigate = useNavigate()
   const overlay = useOverlay()
-  const { notificationsOn, setNotificationsOn } = useApp()
-  const [promos, setPromos] = useState(true)
-  const [reminders, setReminders] = useState(true)
-  // Figma shows all three on; order updates mirrors the O-11 permission choice once made.
-  const [orderUpdates, setOrderUpdates] = useState(true)
-  useEffect(() => {
-    if (notificationsOn) setOrderUpdates(true)
-  }, [notificationsOn])
+  const { notificationsOn, setNotificationsOn, promoConsent, setPromoConsent, remindersOn, setRemindersOn } = useApp()
+  const denied = permission() === 'denied'
+  const [howTo, setHowTo] = useState(false)
+
+  // FR-PRF-05: each toggle saves at once; turning order updates on asks the phone for permission
+  const setOrderUpdates = async (v: boolean) => {
+    setNotificationsOn(v)
+    if (v && permission() === 'default') {
+      try {
+        await Notification.requestPermission()
+      } catch {
+        /* the phone said no or can't ask: in-app updates still arrive */
+      }
+    }
+  }
 
   return (
     <Screen topBar={<TopBar title="Settings" />}>
@@ -270,41 +273,69 @@ export function Settings() {
         <Row>
           <p className="t-caption muted">Notifications</p>
         </Row>
+        {denied && (
+          <Row>
+            <Alert
+              tone="warning"
+              action={
+                <button className="t-body-sm link-text" onClick={() => setHowTo((v) => !v)}>
+                  Open settings
+                </button>
+              }
+            >
+              Turned off in phone settings. You still see updates in the app, and tracking keeps syncing.
+            </Alert>
+          </Row>
+        )}
+        {denied && howTo && (
+          <Row>
+            <p className="t-body-sm muted">
+              To turn them back on, open your phone's Settings, find MEGS' Cafe (or your browser), choose Notifications
+              and allow them. Then come back here.
+            </p>
+          </Row>
+        )}
         <Row>
           <div className="card toggles-card">
             <Toggle
               label="Order updates"
-              description="Status changes for your orders"
-              on={orderUpdates}
-              onChange={(v) => {
-                setOrderUpdates(v)
-                setNotificationsOn(v)
-              }}
+              description={denied ? 'Turned off in phone settings' : 'Status changes for your orders'}
+              on={notificationsOn && !denied}
+              onChange={setOrderUpdates}
+              disabled={denied}
             />
-            <Toggle label="Promotions" description="Offers and new items" on={promos} onChange={setPromos} />
+            <Toggle
+              label="Promotions"
+              description={denied ? 'Turned off in phone settings' : 'Offers and new items'}
+              on={promoConsent && !denied}
+              onChange={setPromoConsent}
+              disabled={denied}
+            />
             <Toggle
               label="Rewards reminders"
-              description="Points and rewards nearing expiry"
-              on={reminders}
-              onChange={setReminders}
+              description={denied ? 'Turned off in phone settings' : 'Points and rewards nearing expiry'}
+              on={remindersOn && !denied}
+              onChange={setRemindersOn}
+              disabled={denied}
             />
           </div>
         </Row>
         <Group title="General">
-          <SettingsRow label="Language" value="English" />
-          <SettingsRow label="Privacy" />
+          <SettingsRow label="Language" value="English" chevron={false} />
+          <SettingsRow label="Privacy" onClick={() => navigate('/settings/privacy')} />
         </Group>
         <Group title="Demo">
           <SettingsRow
             label="Reset demo data"
-            value="Clears this phone"
+            value="Clears this device"
             onClick={() => {
-              if (window.confirm('Reset the demo? Your cart, orders and sign-in on this phone will be cleared.')) resetDemo()
+              if (window.confirm('Reset the demo? The cart, orders, staff console and store settings on this device will be cleared.'))
+                resetDemo()
             }}
           />
         </Group>
         <Group>
-          <SettingsRow label="Delete account" danger />
+          <SettingsRow label="Delete account" danger onClick={() => overlay.open('delete-account')} />
           <SettingsRow label="Log out" danger onClick={() => overlay.open('logout')} />
         </Group>
       </Content>
@@ -312,56 +343,109 @@ export function Settings() {
   )
 }
 
-type Note = { id: string; title: string; body: string; time: string; to: string; day: 'Today' | 'Earlier' }
+/** C-34 Privacy (FR-PRF-06, NFR-SEC-07): the notice, consent for promotional messages, a copy of your data */
+export function Privacy() {
+  const overlay = useOverlay()
+  const { promoConsent, setPromoConsent } = useApp()
 
-const initialNotes: Note[] = [
-  { id: 'n1', title: 'Your order is ready', body: 'Order #1042 is ready for pickup.', time: '2 min ago', to: '/orders/tracking', day: 'Today' },
-  {
-    id: 'n2',
-    title: 'You earned 120 points',
-    body: 'Thanks for ordering. Points added to your balance.',
-    time: '1 hr ago',
-    to: '/rewards/activity',
-    day: 'Today',
-  },
-  {
-    id: 'n3',
-    title: featuredPromotion?.title ?? 'New offers this week',
-    body: 'Ends 31 Oct. Tap to see the offer.',
-    time: 'Yesterday',
-    to: featuredPromotion ? `/promotions/${featuredPromotion.id}` : '/promotions',
-    day: 'Earlier',
-  },
-  { id: 'n4', title: 'Order #1038 completed', body: 'Rate your order or order it again.', time: '12 Oct', to: '/orders/1038', day: 'Earlier' },
-]
+  const download = () => {
+    const blob = new Blob([JSON.stringify(customerDataExport(), null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'megs-cafe-my-data.json'
+    a.click()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+  }
 
-let readIds = new Set(['n3', 'n4'])
+  return (
+    <Screen topBar={<TopBar title="Privacy" />}>
+      <Content>
+        <Row>
+          <div className="privacy-notice">
+            <h2 className="t-h3">What we keep and why</h2>
+            <p className="t-body">
+              MEGS' Cafe keeps your name, mobile number and email to run your account, your orders and saved addresses to
+              prepare and deliver them, and your points and rewards so you can use them.
+            </p>
+            <p className="t-body">
+              We never keep card numbers: cards are held by the payment provider. We use your data only for your orders and,
+              if you agree below, for offers. We don't sell it.
+            </p>
+            <p className="t-body">
+              Under the Data Privacy Act of 2012 (Republic Act No. 10173) you can see the data we hold, have it corrected,
+              withdraw consent and ask us to delete it. Ask at the counter or use the options below.
+            </p>
+          </div>
+        </Row>
+        <Row>
+          <div className="card toggles-card">
+            <Toggle
+              label="Promotional messages"
+              description="Offers and new items, by notification. Off unless you turn it on."
+              on={promoConsent}
+              onChange={setPromoConsent}
+            />
+          </div>
+        </Row>
+        <Row>
+          <Button variant="secondary" onClick={download}>
+            Download my data
+          </Button>
+        </Row>
+        <Group>
+          <SettingsRow label="Delete account" danger onClick={() => overlay.open('delete-account')} />
+        </Group>
+      </Content>
+    </Screen>
+  )
+}
 
-/** C-30 Notifications */
+const ago = (at: number) => {
+  const m = Math.round((Date.now() - at) / 60000)
+  if (m < 1) return 'Just now'
+  if (m < 60) return `${m} min ago`
+  if (m < 24 * 60) return `${Math.round(m / 60)} hr ago`
+  if (m < 48 * 60) return 'Yesterday'
+  return new Date(at).toLocaleDateString('en-PH', { day: 'numeric', month: 'short', timeZone: 'Asia/Manila' })
+}
+
+const isToday = (at: number) => {
+  const d = (t: number) => new Date(t).toLocaleDateString('en-PH', { timeZone: 'Asia/Manila' })
+  return d(at) === d(Date.now())
+}
+
+/** C-30 Notifications — FR-TRK-07: Today and Earlier, unread marked by a dot, bold title and "Unread" */
 export function Notifications() {
   const navigate = useNavigate()
-  const [read, setRead] = useState(readIds)
+  const { notifications } = useShared()
+  const sorted = [...notifications].sort((a, b) => b.at - a.at)
 
-  const open = (n: Note) => {
-    readIds = new Set([...read, n.id])
-    setRead(readIds)
+  const open = (n: CustomerNote) => {
+    markNoteRead(n.id)
     navigate(n.to)
   }
 
   return (
     <Screen topBar={<TopBar title="Notifications" />}>
       <Content>
-        {(['Today', 'Earlier'] as const).map((day) => (
-          <div key={day} className="notes-group">
-            <Row>
-              <p className="t-caption muted">{day}</p>
-            </Row>
-            <Row>
-              <div className="card notes-card">
-                {initialNotes
-                  .filter((n) => n.day === day)
-                  .map((n) => {
-                    const unread = !read.has(n.id)
+        {sorted.length === 0 && (
+          <Row>
+            <p className="t-body muted">No notifications yet. Order updates and offers show up here.</p>
+          </Row>
+        )}
+        {(['Today', 'Earlier'] as const).map((day) => {
+          const items = sorted.filter((n) => isToday(n.at) === (day === 'Today'))
+          if (!items.length) return null
+          return (
+            <div key={day} className="notes-group">
+              <Row>
+                <p className="t-caption muted">{day}</p>
+              </Row>
+              <Row>
+                <div className="card notes-card">
+                  {items.map((n) => {
+                    const unread = !n.read
                     return (
                       <button key={n.id} className="note" onClick={() => open(n)}>
                         <span className={`note__dot ${unread ? 'is-unread' : ''}`} />
@@ -371,15 +455,16 @@ export function Notifications() {
                             {unread && <span className="t-caption note__unread">Unread</span>}
                           </span>
                           <span className="t-body-sm muted">{n.body}</span>
-                          <span className="t-caption muted">{n.time}</span>
+                          <span className="t-caption muted">{ago(n.at)}</span>
                         </span>
                       </button>
                     )
                   })}
-              </div>
-            </Row>
-          </div>
-        ))}
+                </div>
+              </Row>
+            </div>
+          )
+        })}
       </Content>
     </Screen>
   )
@@ -440,6 +525,12 @@ export function AddPaymentMethod() {
       <Content>
         <Row>
           <Alert>Placeholder form. To be replaced by the payment provider SDK.</Alert>
+        </Row>
+        <Row>
+          <p className="t-body-sm muted">
+            Demo test cards: a number ending <span className="num">0002</span> is always declined; one ending{' '}
+            <span className="num">0119</span> is charged, then placing the order fails once (Retry is safe).
+          </p>
         </Row>
         <Row>
           <TextField

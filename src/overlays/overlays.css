@@ -182,3 +182,41 @@
   gap: 2px 12px;
 }
 .offer-applied .t-body-sm { grid-column: 1 / -1; }
+
+/* Toast — order updates and confirmations, over the top of the screen, inside the phone */
+.app-toast {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: calc(var(--status-h) + 8px);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  min-height: 56px;
+  padding: var(--space-8) var(--space-8) var(--space-8) var(--space-16);
+  background: var(--ink);
+  color: var(--on-dark);
+  border-radius: var(--radius-card);
+  box-shadow: var(--elevation-3);
+  animation: toast-drop 0.2s ease-out;
+}
+.app-toast__text { flex: 1 0 0; min-width: 0; }
+.app-toast__action {
+  flex-shrink: 0;
+  min-width: 56px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--radius-button);
+  background: transparent;
+  color: var(--gold);
+  cursor: pointer;
+}
+.app-toast__action:hover { background: var(--steel); }
+@keyframes toast-drop {
+  from { transform: translateY(-8px); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-toast { animation: none; }
+}
